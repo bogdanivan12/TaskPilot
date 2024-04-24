@@ -1,0 +1,17 @@
+FROM --platform=linux/amd64 python:3.8.11-bullseye
+
+WORKDIR /taskpilot
+
+ENV PYTHONPATH="${PYTHONPATH}:/."
+
+COPY taskpilot/api/requirements.txt /taskpilot/api/requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r api/requirements.txt
+
+COPY taskpilot/common ./common
+COPY taskpilot/api ./api
+
+EXPOSE 8080
+
+CMD ["python3", "-m", "pytest", "--disable-warnings"]
+CMD ["python3", "api/api_main.py"]
