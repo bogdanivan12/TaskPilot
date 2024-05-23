@@ -111,6 +111,7 @@ disable=
     logging-fstring-interpolation,
     missing-timeout,
     unexpected-keyword-arg,
+    consider-alternative-union-syntax,
 
 
 
