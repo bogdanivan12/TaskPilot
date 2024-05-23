@@ -19,7 +19,7 @@ class User(BaseModel):
 
 class Ticket(BaseModel):
     """Ticket model"""
-    id: str
+    ticket_id: str
     title: str
     description: Optional[str] = None
     type: str
@@ -37,7 +37,7 @@ class Ticket(BaseModel):
 
 class Comment(BaseModel):
     """Comment model"""
-    id: str
+    comment_id: str
     ticket_id: str
     text: str
     created_by: str
@@ -46,7 +46,7 @@ class Comment(BaseModel):
 
 class Project(BaseModel):
     """Project model"""
-    id: str
+    project_id: str
     title: str
     description: Optional[str] = None
     created_by: str

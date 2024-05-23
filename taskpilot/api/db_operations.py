@@ -63,7 +63,6 @@ def create_item(index: str,
     """Create an item in the database"""
     if not item_id:
         item_id = str(uuid.uuid4())
-    item["id"] = item_id
     conn = get_connection()
     try:
         response = conn.index(
@@ -84,7 +83,6 @@ def create_item(index: str,
 
 def update_item(index: str, item_id: str, item: Dict[str, Any]) -> bool:
     """Update an item in the database"""
-    item["id"] = item_id
     conn = get_connection()
     try:
         response = conn.update(
