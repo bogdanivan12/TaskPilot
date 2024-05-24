@@ -1,6 +1,8 @@
 """API response classes"""
-from typing import Any
+from typing import List, Optional
 from pydantic import BaseModel
+
+from taskpilot.api import api_models as models
 
 
 class Response(BaseModel):
@@ -8,4 +10,13 @@ class Response(BaseModel):
     message: str
     code: int = 200
     result: bool = True
-    data: Any = None
+
+
+class GetUserResponse(Response):
+    """Get user response model"""
+    user: Optional[models.User] = None
+
+
+class GetAllUsersResponse(Response):
+    """Get all users response model"""
+    users: Optional[List[models.User]] = None

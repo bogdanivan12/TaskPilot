@@ -39,7 +39,7 @@ def get_item(index: str, item_id: str) -> Dict[str, Any]:
     return item_dict
 
 
-def get_all_items(index: str) -> Dict[str, Dict[str, Any]]:
+def get_all_items(index: str) -> Optional[Dict[str, Dict[str, Any]]]:
     """Get all items from the database"""
     conn = get_connection()
     try:
@@ -53,7 +53,7 @@ def get_all_items(index: str) -> Dict[str, Dict[str, Any]]:
         logger.error(
             f"Failed to retrieve all items from index {index}: {exception}"
         )
-        items_dict = {}
+        items_dict = None
     return items_dict
 
 
@@ -115,8 +115,9 @@ def delete_item(index: str, item_id: str) -> bool:
     return response["result"] == "deleted"
 
 
-def search_items(index: str,
-                 query_dict: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+def search_items(
+        index: str,
+        query_dict: Dict[str, Any]) -> Optional[Dict[str, Dict[str, Any]]]:
     """Search for items in the database"""
     if not query_dict:
         return get_all_items(index)
@@ -144,5 +145,5 @@ def search_items(index: str,
             f"Failed to retrieve items from index {index} that satisfy the"
             f" query {query_dict}: {exception}"
         )
-        items_dict = {}
+        items_dict = None
     return items_dict

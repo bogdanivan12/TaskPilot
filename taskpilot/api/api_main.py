@@ -25,7 +25,7 @@ async def redirect_to_docs() -> RedirectResponse:
 
 @app.get(config_info.API_ROUTES[config_info.APIOperations.USERS_GET],
          tags=["Users"])
-async def get_user(user_id: str) -> api_resp.Response:
+async def get_user(user_id: str) -> api_resp.GetUserResponse:
     """
     Get a user by id
     """
@@ -41,6 +41,49 @@ async def create_user(
     Create a user
     """
     response = api_help.create_user(user_req)
+    return response
+
+
+@app.put(config_info.API_ROUTES[config_info.APIOperations.USERS_UPDATE],
+         tags=["Users"])
+async def update_user(
+        user_id: str,
+        user_req: api_req.UpdateUserRequest) -> api_resp.Response:
+    """
+    Update a user
+    """
+    response = api_help.update_user(user_id, user_req)
+    return response
+
+
+@app.delete(config_info.API_ROUTES[config_info.APIOperations.USERS_DELETE],
+            tags=["Users"])
+async def delete_user(user_id: str) -> api_resp.Response:
+    """
+    Delete a user
+    """
+    response = api_help.delete_user(user_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[config_info.APIOperations.USERS_ALL],
+         tags=["Users"])
+async def get_all_users() -> api_resp.GetAllUsersResponse:
+    """
+    Get all users
+    """
+    response = api_help.get_all_users()
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.USERS_SEARCH],
+         tags=["Users"])
+async def search_users(search_req: api_req.SearchUsersRequest
+                       ) -> api_resp.GetAllUsersResponse:
+    """
+    Search for users
+    """
+    response = api_help.search_users(search_req)
     return response
 
 
