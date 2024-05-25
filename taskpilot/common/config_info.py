@@ -2,6 +2,7 @@
 import logging
 import sys
 import hashlib
+import datetime
 
 
 HOST = "0.0.0.0"
@@ -40,6 +41,11 @@ def get_logger():
     logger.addHandler(handler)
 
     return logger
+
+
+def get_current_time() -> str:
+    """Get the current time in a formatted string"""
+    return str(datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
 
 
 class Entities:
@@ -94,5 +100,12 @@ API_ROUTES = {
     APIOperations.USERS_UPDATE: "/api/users/{user_id}",
     APIOperations.USERS_DELETE: "/api/users/{user_id}",
     APIOperations.USERS_ALL: "/api/users",
-    APIOperations.USERS_SEARCH: "/api/users/search"
+    APIOperations.USERS_SEARCH: "/api/users/search",
+
+    APIOperations.PROJECTS_GET: "/api/projects/{project_id}",
+    APIOperations.PROJECTS_CREATE: "/api/projects",
+    APIOperations.PROJECTS_UPDATE: "/api/projects/{project_id}",
+    APIOperations.PROJECTS_DELETE: "/api/projects/{project_id}",
+    APIOperations.PROJECTS_ALL: "/api/projects",
+    APIOperations.PROJECTS_SEARCH: "/api/projects/search"
 }

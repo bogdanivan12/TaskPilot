@@ -28,3 +28,26 @@ class SearchUsersRequest(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
     is_admin: Optional[bool] = None
+
+
+class CreateProjectRequest(BaseModel):
+    """Create project request model"""
+    project_id: str
+    title: str
+    description: str
+    created_by: str
+
+
+class UpdateProjectRequest(BaseModel):
+    """Update project request model"""
+    title: str
+    description: str
+    modified_by: str
+
+
+class SearchProjectsRequest(BaseModel):
+    """Search projects request model"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    created_by: Optional[str] = None
+    modified_by: Optional[str] = None

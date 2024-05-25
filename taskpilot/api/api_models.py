@@ -26,9 +26,9 @@ class Ticket(BaseModel):
     status: str
     assignee: Optional[str] = None
     created_by: str
-    created_at: datetime.datetime
+    created_at: str
     modified_by: str
-    modified_at: datetime.datetime
+    modified_at: str
     parent_project: str
     parent_ticket: Optional[str] = None
 
@@ -39,7 +39,7 @@ class Comment(BaseModel):
     ticket_id: str
     text: str
     created_by: str
-    created_at: datetime.datetime
+    created_at: str
 
 
 class Project(BaseModel):
@@ -48,6 +48,6 @@ class Project(BaseModel):
     title: str
     description: str
     created_by: str
-    created_at: datetime.datetime
+    created_at: str
     modified_by: str
-    modified_at: datetime.datetime
+    modified_at: str

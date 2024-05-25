@@ -20,3 +20,13 @@ class GetUserResponse(Response):
 class GetAllUsersResponse(Response):
     """Get all users response model"""
     users: Optional[List[models.User]] = None
+
+
+class GetProjectResponse(Response):
+    """Get project response model"""
+    project: Optional[models.Project] = None
+
+
+class GetAllProjectsResponse(Response):
+    """Get all projects response model"""
+    projects: Optional[List[models.Project]] = None

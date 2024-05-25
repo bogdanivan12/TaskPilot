@@ -87,6 +87,70 @@ async def search_users(search_req: api_req.SearchUsersRequest
     return response
 
 
+@app.get(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_GET],
+         tags=["Projects"])
+async def get_project(project_id: str) -> api_resp.GetProjectResponse:
+    """
+    Get a project by id
+    """
+    response = api_help.get_project(project_id)
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_CREATE],
+          tags=["Projects"])
+async def create_project(
+        project_req: api_req.CreateProjectRequest) -> api_resp.Response:
+    """
+    Create a project
+    """
+    response = api_help.create_project(project_req)
+    return response
+
+
+@app.put(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_UPDATE],
+         tags=["Projects"])
+async def update_project(
+        project_id: str,
+        project_req: api_req.UpdateProjectRequest) -> api_resp.Response:
+    """
+    Update a project
+    """
+    response = api_help.update_project(project_id, project_req)
+    return response
+
+
+@app.delete(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_DELETE],
+            tags=["Projects"])
+async def delete_project(project_id: str) -> api_resp.Response:
+    """
+    Delete a project
+    """
+    response = api_help.delete_project(project_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_ALL],
+         tags=["Projects"])
+async def get_all_projects() -> api_resp.GetAllProjectsResponse:
+    """
+    Get all projects
+    """
+    response = api_help.get_all_projects()
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_SEARCH],
+          tags=["Projects"])
+async def search_projects(search_req: api_req.SearchProjectsRequest
+                          ) -> api_resp.GetAllProjectsResponse:
+    """
+    Search for projects
+    """
+    response = api_help.search_projects(search_req)
+    return response
+
+
 if __name__ == "__main__":
     uvicorn.run(
         app=config_info.API_APP,
