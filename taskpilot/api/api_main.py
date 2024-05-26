@@ -87,6 +87,64 @@ async def search_users(search_req: api_req.SearchUsersRequest
     return response
 
 
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.USERS_ALL_ASSIGNED_TICKETS],
+         tags=["Users"])
+async def get_all_assigned_tickets(user_id: str
+                                   ) -> api_resp.GetAllTicketsResponse:
+    """
+    Get all tickets assigned to a user
+    """
+    response = api_help.get_all_assigned_tickets(user_id)
+    return response
+
+
+@app.post(config_info.API_ROUTES[
+              config_info.APIOperations.USERS_ASSIGN_TICKET],
+          tags=["Users"])
+async def assign_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
+    """
+    Assign a ticket to a user
+    """
+    response = api_help.assign_ticket(user_id, ticket_id)
+    return response
+
+
+@app.delete(config_info.API_ROUTES[
+                config_info.APIOperations.USERS_UNASSIGN_TICKET],
+            tags=["Users"])
+async def unassign_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
+    """
+    Unassign a ticket from a user
+    """
+    response = api_help.unassign_ticket(user_id, ticket_id)
+    return response
+
+
+@app.post(config_info.API_ROUTES[
+              config_info.APIOperations.USERS_ADD_FAVORITE_TICKET],
+          tags=["Users"])
+async def add_favorite_ticket(user_id: str,
+                              ticket_id: str) -> api_resp.Response:
+    """
+    Add a ticket to a user's favorites
+    """
+    response = api_help.add_favorite_ticket(user_id, ticket_id)
+    return response
+
+
+@app.delete(config_info.API_ROUTES[
+                config_info.APIOperations.USERS_REMOVE_FAVORITE_TICKET],
+            tags=["Users"])
+async def remove_favorite_ticket(user_id: str,
+                                 ticket_id: str) -> api_resp.Response:
+    """
+    Remove a ticket from a user's favorites
+    """
+    response = api_help.remove_favorite_ticket(user_id, ticket_id)
+    return response
+
+
 @app.get(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_GET],
          tags=["Projects"])
 async def get_project(project_id: str) -> api_resp.GetProjectResponse:
@@ -151,6 +209,42 @@ async def search_projects(search_req: api_req.SearchProjectsRequest
     return response
 
 
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.PROJECTS_ALL_TICKETS],
+         tags=["Projects"])
+async def get_all_tickets_in_project(project_id: str
+                                     ) -> api_resp.GetAllTicketsResponse:
+    """
+    Get all tickets in a project
+    """
+    response = api_help.get_all_tickets_in_project(project_id)
+    return response
+
+
+@app.post(config_info.API_ROUTES[
+              config_info.APIOperations.PROJECTS_ADD_MEMBER],
+            tags=["Projects"])
+async def add_member_to_project(project_id: str,
+                                user_id: str) -> api_resp.Response:
+    """
+    Add a member to a project
+    """
+    response = api_help.add_member_to_project(project_id, user_id)
+    return response
+
+
+@app.delete(config_info.API_ROUTES[
+                config_info.APIOperations.PROJECTS_REMOVE_MEMBER],
+            tags=["Projects"])
+async def remove_member_from_project(project_id: str,
+                                     user_id: str) -> api_resp.Response:
+    """
+    Remove a member from a project
+    """
+    response = api_help.remove_member_from_project(project_id, user_id)
+    return response
+
+
 @app.get(config_info.API_ROUTES[config_info.APIOperations.TICKETS_GET],
          tags=["Tickets"])
 async def get_ticket(ticket_id: str) -> api_resp.GetTicketResponse:
@@ -212,6 +306,42 @@ async def search_tickets(search_req: api_req.SearchTicketsRequest
     Search for tickets
     """
     response = api_help.search_tickets(search_req)
+    return response
+
+
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.TICKETS_ALL_COMMENTS],
+         tags=["Tickets"])
+async def get_all_comments_for_ticket(ticket_id: str
+                                      ) -> api_resp.GetAllCommentsResponse:
+    """
+    Get all comments for a given ticket
+    """
+    response = api_help.get_all_comments_for_ticket(ticket_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.TICKETS_ALL_CHILDREN],
+         tags=["Tickets"])
+async def get_all_children_tickets(ticket_id: str
+                                   ) -> api_resp.GetAllTicketsResponse:
+    """
+    Get all children tickets for a given ticket
+    """
+    response = api_help.get_all_children_tickets(ticket_id)
+    return response
+
+
+@app.put(config_info.API_ROUTES[
+             config_info.APIOperations.TICKETS_CHANGE_STATUS],
+         tags=["Tickets"])
+async def change_ticket_status(ticket_id: str,
+                               status: str) -> api_resp.Response:
+    """
+    Change the status of a ticket
+    """
+    response = api_help.change_ticket_status(ticket_id, status)
     return response
 
 

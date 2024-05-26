@@ -178,6 +178,150 @@ def search_users(search_req: api_req.SearchUsersRequest
     return response
 
 
+def get_all_assigned_tickets(user_id: str) -> api_resp.GetAllTicketsResponse:
+    """
+    Get all tickets assigned to a user
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    query_dict = {"assignee": user_id}
+
+    db_search_result = db.search_items(index, query_dict)
+
+    if db_search_result is None:
+        response = api_resp.GetAllTicketsResponse(
+            message=f"Failed to retrieve all tickets assigned to user with id"
+                    f" '{user_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    tickets = [models.Ticket.parse_obj(ticket)
+               for ticket in db_search_result.values()]
+    response = api_resp.GetAllTicketsResponse(
+        message=f"All tickets assigned to user with id '{user_id}' retrieved"
+                f" successfully",
+        tickets=tickets
+    )
+    logger.info(response.message)
+    return response
+
+
+def assign_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
+    """
+    Assign a ticket to a user
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    ticket_dict = {"assignee": user_id}
+
+    db_update_result = db.update_item(index, ticket_id, ticket_dict)
+
+    if not db_update_result:
+        response = api_resp.Response(
+            message=f"Failed to assign ticket with id '{ticket_id}' to user"
+                    f" with id '{user_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Ticket with id '{ticket_id}' assigned to user with id"
+                f" '{user_id}' successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def unassign_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
+    """
+    Unassign a ticket from a user
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    ticket_dict = {"assignee": None}
+
+    db_update_result = db.update_item(index, ticket_id, ticket_dict)
+
+    if not db_update_result:
+        response = api_resp.Response(
+            message=f"Failed to unassign ticket with id '{ticket_id}' from"
+                    f" user with id '{user_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Ticket with id '{ticket_id}' unassigned from user with id"
+                f" '{user_id}' successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def add_favorite_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
+    """
+    Add a ticket to a user's favorites
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.USER]
+    favorite_tickets = get_user(user_id).user.favorite_tickets
+    favorite_tickets.add(ticket_id)
+    user_update_dict = {"favorite_tickets": favorite_tickets}
+
+    db_update_result = db.update_item(index, user_id, user_update_dict)
+
+    if not db_update_result:
+        response = api_resp.Response(
+            message=f"Failed to add ticket with id '{ticket_id}' to user with"
+                    f" id '{user_id}' favorites",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Ticket with id '{ticket_id}' added to user with id"
+                f" '{user_id}' favorites successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def remove_favorite_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
+    """
+    Remove a ticket from a user's favorites
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.USER]
+    favorite_tickets = set(get_user(user_id).user.favorite_tickets)
+    favorite_tickets.discard(ticket_id)
+    favorite_tickets = list(favorite_tickets)
+
+    user_update_dict = {"favorite_tickets": favorite_tickets}
+
+    db_update_result = db.update_item(index, user_id, user_update_dict)
+
+    if not db_update_result:
+        response = api_resp.Response(
+            message=f"Failed to remove ticket with id '{ticket_id}' from user"
+                    f" with id '{user_id}' favorites",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Ticket with id '{ticket_id}' removed from user with id"
+                f" '{user_id}' favorites successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
 def get_project(project_id: str) -> api_resp.GetProjectResponse:
     """
     Get a project by id
@@ -364,6 +508,117 @@ def search_projects(search_req: api_req.SearchProjectsRequest
     return response
 
 
+def get_all_tickets_in_project(project_id: str
+                               ) -> api_resp.GetAllTicketsResponse:
+    """
+    Get all tickets in a project
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    query_dict = {"parent_project": project_id}
+
+    db_search_result = db.search_items(index, query_dict)
+
+    if db_search_result is None:
+        response = api_resp.GetAllTicketsResponse(
+            message=f"Failed to retrieve all tickets in project with id"
+                    f" '{project_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    tickets = [models.Ticket.parse_obj(ticket)
+               for ticket in db_search_result.values()]
+    response = api_resp.GetAllTicketsResponse(
+        message=f"All tickets in project with id '{project_id}' retrieved"
+                f" successfully",
+        tickets=tickets
+    )
+    logger.info(response.message)
+    return response
+
+
+def add_member_to_project(project_id: str,
+                          user_id: str) -> api_resp.Response:
+    """
+    Add a member to a project
+    """
+    projects_index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
+    project_dict = get_project(project_id).project.dict()
+    members = project_dict["members"]
+    members.add(user_id)
+    project_dict["members"] = members
+
+    db_update_project_result = db.update_item(projects_index, project_id,
+                                              project_dict)
+
+    users_index = config_info.DB_INDEXES[config_info.Entities.USER]
+    user_dict = get_user(user_id).user.dict()
+    projects = user_dict["projects"]
+    projects.add(project_id)
+    user_dict["projects"] = projects
+
+    db_update_user_result = db.update_item(users_index, user_id, user_dict)
+
+    if not db_update_project_result or not db_update_user_result:
+        response = api_resp.Response(
+            message=f"Failed to add user with id '{user_id}' to project with"
+                    f" id '{project_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user_id}' added to project with id"
+                f" '{project_id}' successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def remove_member_from_project(project_id: str,
+                               user_id: str) -> api_resp.Response:
+    """
+    Remove a member from a project
+    """
+    projects_index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
+    project_dict = get_project(project_id).project.dict()
+    members = set(project_dict["members"])
+    members.discard(user_id)
+    project_dict["members"] = list(members)
+
+    db_update_project_result = db.update_item(projects_index, project_id,
+                                              project_dict)
+
+    users_index = config_info.DB_INDEXES[config_info.Entities.USER]
+    user_dict = get_user(user_id).user.dict()
+    projects = set(user_dict["projects"])
+    projects.discard(project_id)
+    user_dict["projects"] = list(projects)
+
+    db_update_user_result = db.update_item(users_index, user_id, user_dict)
+
+    if not db_update_project_result or not db_update_user_result:
+        response = api_resp.Response(
+            message=f"Failed to remove user with id '{user_id}' from project"
+                    f" with id '{project_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user_id}' removed from project with id"
+                f" '{project_id}' successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
 def get_ticket(ticket_id: str) -> api_resp.GetTicketResponse:
     """
     Get a ticket by id
@@ -545,6 +800,95 @@ def search_tickets(search_req: api_req.SearchTicketsRequest
     response = api_resp.GetAllTicketsResponse(
         message="Tickets retrieved successfully",
         tickets=tickets
+    )
+    logger.info(response.message)
+    return response
+
+
+def get_all_comments_for_ticket(ticket_id: str
+                                ) -> api_resp.GetAllCommentsResponse:
+    """
+    Get all comments for a given ticket
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.COMMENT]
+    query_dict = {"ticket_id": ticket_id}
+
+    db_search_result = db.search_items(index, query_dict)
+
+    if db_search_result is None:
+        response = api_resp.GetAllCommentsResponse(
+            message=f"Failed to retrieve all comments for ticket with id"
+                    f" '{ticket_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    comments = [models.Comment.parse_obj(comment)
+                for comment in db_search_result.values()]
+    response = api_resp.GetAllCommentsResponse(
+        message=f"All comments for ticket with id '{ticket_id}' retrieved"
+                f" successfully",
+        comments=comments
+    )
+    logger.info(response.message)
+    return response
+
+
+def get_all_children_tickets(ticket_id: str
+                             ) -> api_resp.GetAllTicketsResponse:
+    """
+    Get all children tickets for a given ticket
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    query_dict = {"parent_ticket": ticket_id}
+
+    db_search_result = db.search_items(index, query_dict)
+
+    if db_search_result is None:
+        response = api_resp.GetAllTicketsResponse(
+            message=f"Failed to retrieve all children tickets for ticket with"
+                    f" id '{ticket_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    tickets = [models.Ticket.parse_obj(ticket)
+               for ticket in db_search_result.values()]
+    response = api_resp.GetAllTicketsResponse(
+        message=f"All children tickets for ticket with id '{ticket_id}'"
+                f" retrieved successfully",
+        tickets=tickets
+    )
+    logger.info(response.message)
+    return response
+
+
+def change_ticket_status(ticket_id: str, status: str) -> api_resp.Response:
+    """
+    Change the status of a ticket
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    ticket_dict = {"status": status}
+
+    db_update_result = db.update_item(index, ticket_id, ticket_dict)
+
+    if not db_update_result:
+        response = api_resp.Response(
+            message=f"Failed to change status of ticket with id '{ticket_id}'"
+                    f" to '{status}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Status of ticket with id '{ticket_id}' changed to '{status}'"
+                f" successfully"
     )
     logger.info(response.message)
     return response
