@@ -40,3 +40,13 @@ class GetTicketResponse(Response):
 class GetAllTicketsResponse(Response):
     """Get all tickets response model"""
     tickets: Optional[List[models.Ticket]] = None
+
+
+class GetCommentResponse(Response):
+    """Get comment response model"""
+    comment: Optional[models.Comment] = None
+
+
+class GetAllCommentsResponse(Response):
+    """Get all comments response model"""
+    comments: Optional[List[models.Comment]] = None

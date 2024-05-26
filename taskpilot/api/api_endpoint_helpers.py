@@ -273,7 +273,17 @@ def delete_project(project_id: str) -> api_resp.Response:
     child_tickets = [ticket.ticket_id for ticket in child_tickets_resp.tickets]
 
     for ticket_id in child_tickets:
-        delete_ticket(ticket_id)
+        delete_ticket_response = delete_ticket(ticket_id)
+        if not delete_ticket_response.result:
+            response = api_resp.Response(
+                message=f"Failed to delete linked project with id"
+                        f" '{project_id}' due to failed ticket deletion:"
+                        f" {delete_ticket_response.message}",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
 
     db_delete_result = db.delete_item(index, project_id)
 
@@ -443,6 +453,25 @@ def delete_ticket(ticket_id: str) -> api_resp.Response:
     Delete a ticket
     """
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+
+    child_comments_req = api_req.SearchCommentsRequest(ticket_id=ticket_id)
+    child_comments_resp = search_comments(child_comments_req)
+    child_comments = [comment.comment_id
+                      for comment in child_comments_resp.comments]
+
+    for comment_id in child_comments:
+        delete_comment_resp = delete_comment(comment_id)
+        if not delete_comment_resp.result:
+            response = api_resp.Response(
+                message=f"Failed to delete linked ticket with id '{ticket_id}'"
+                        f" due to failed comment deletion:"
+                        f" {delete_comment_resp.message}",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
+
     db_delete_result = db.delete_item(index, ticket_id)
 
     if not db_delete_result:
@@ -516,6 +545,145 @@ def search_tickets(search_req: api_req.SearchTicketsRequest
     response = api_resp.GetAllTicketsResponse(
         message="Tickets retrieved successfully",
         tickets=tickets
+    )
+    logger.info(response.message)
+    return response
+
+
+def get_comment(comment_id: str) -> api_resp.GetCommentResponse:
+    """
+    Get a comment by id
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.COMMENT]
+    db_get_result = db.get_item(index, comment_id)
+
+    if not db_get_result:
+        response = api_resp.GetCommentResponse(
+            message=f"Comment with id '{comment_id}' not found",
+            code=404,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    comment = models.Comment.parse_obj(db_get_result)
+    response = api_resp.GetCommentResponse(
+        message=f"Comment with id '{comment_id}' retrieved successfully",
+        comment=comment
+    )
+    logger.info(response.message)
+    return response
+
+
+def create_comment(
+        comment_req: api_req.CreateCommentRequest) -> api_resp.Response:
+    """
+    Create a comment
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.COMMENT]
+    comment_dict = comment_req.dict()
+    comment_dict["created_at"] = config_info.get_current_time()
+    comment_dict["modified_at"] = comment_dict["created_at"]
+    comment_dict["modified_by"] = comment_dict["created_by"]
+    comment = models.Comment.parse_obj(comment_dict)
+
+    db_create_result = db.create_item(
+        index, comment.dict(), comment.comment_id)
+
+    if not db_create_result:
+        response = api_resp.Response(
+            message=f"Failed to create comment with id '{comment.comment_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Comment with id '{comment.comment_id}' created successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def delete_comment(comment_id: str) -> api_resp.Response:
+    """
+    Delete a comment
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.COMMENT]
+    db_delete_result = db.delete_item(index, comment_id)
+
+    if not db_delete_result:
+        response = api_resp.Response(
+            message=f"Failed to delete comment with id '{comment_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Comment with id '{comment_id}' deleted successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def get_all_comments() -> api_resp.GetAllCommentsResponse:
+    """
+    Get all comments
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.COMMENT]
+    db_get_all_result = db.get_all_items(index)
+
+    if db_get_all_result is None:
+        response = api_resp.GetAllCommentsResponse(
+            message="Failed to retrieve all comments",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    comments = [models.Comment.parse_obj(comment)
+                for comment in db_get_all_result.values()]
+    response = api_resp.GetAllCommentsResponse(
+        message="All comments retrieved successfully",
+        comments=comments
+    )
+    logger.info(response.message)
+    return response
+
+
+def search_comments(search_req: api_req.SearchCommentsRequest
+                          ) -> api_resp.GetAllCommentsResponse:
+    """
+    Search for comments
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.COMMENT]
+    query_dict = search_req.dict()
+    query_dict = {
+        field: value
+        for field, value in query_dict.items()
+        if value is not None
+    }
+
+    db_search_result = db.search_items(index, query_dict)
+
+    if db_search_result is None:
+        response = api_resp.GetAllCommentsResponse(
+            message="Failed to search for comments",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    comments = [models.Comment.parse_obj(comment)
+                for comment in db_search_result.values()]
+    response = api_resp.GetAllCommentsResponse(
+        message="Comments retrieved successfully",
+        comments=comments
     )
     logger.info(response.message)
     return response

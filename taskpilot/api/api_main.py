@@ -215,6 +215,58 @@ async def search_tickets(search_req: api_req.SearchTicketsRequest
     return response
 
 
+@app.get(config_info.API_ROUTES[config_info.APIOperations.COMMENTS_GET],
+         tags=["Comments"])
+async def get_comment(comment_id: str) -> api_resp.GetCommentResponse:
+    """
+    Get a comment by id
+    """
+    response = api_help.get_comment(comment_id)
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.COMMENTS_CREATE],
+          tags=["Comments"])
+async def create_comment(
+        comment_req: api_req.CreateCommentRequest) -> api_resp.Response:
+    """
+    Create a comment
+    """
+    response = api_help.create_comment(comment_req)
+    return response
+
+
+@app.delete(config_info.API_ROUTES[config_info.APIOperations.COMMENTS_DELETE],
+            tags=["Comments"])
+async def delete_comment(comment_id: str) -> api_resp.Response:
+    """
+    Delete a comment
+    """
+    response = api_help.delete_comment(comment_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[config_info.APIOperations.COMMENTS_ALL],
+         tags=["Comments"])
+async def get_all_comments() -> api_resp.GetAllCommentsResponse:
+    """
+    Get all comments
+    """
+    response = api_help.get_all_comments()
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.COMMENTS_SEARCH],
+          tags=["Comments"])
+async def search_comments(search_req: api_req.SearchCommentsRequest
+                          ) -> api_resp.GetAllCommentsResponse:
+    """
+    Search for comments
+    """
+    response = api_help.search_comments(search_req)
+    return response
+
+
 if __name__ == "__main__":
     uvicorn.run(
         app=config_info.API_APP,

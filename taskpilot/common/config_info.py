@@ -115,4 +115,10 @@ API_ROUTES = {
     APIOperations.TICKETS_DELETE: "/api/tickets/{ticket_id}",
     APIOperations.TICKETS_ALL: "/api/tickets",
     APIOperations.TICKETS_SEARCH: "/api/tickets/search",
+
+    APIOperations.COMMENTS_GET: "/api/comments/{comment_id}",
+    APIOperations.COMMENTS_CREATE: "/api/comments",
+    APIOperations.COMMENTS_DELETE: "/api/comments/{comment_id}",
+    APIOperations.COMMENTS_ALL: "/api/comments",
+    APIOperations.COMMENTS_SEARCH: "/api/comments/search"
 }

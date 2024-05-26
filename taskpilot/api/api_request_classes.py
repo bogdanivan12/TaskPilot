@@ -98,3 +98,19 @@ class SearchTicketsRequest(BaseModel):
     modified_by: Optional[str] = None
     parent_project: Optional[str] = None
     parent_ticket: Optional[str] = None
+
+
+class CreateCommentRequest(BaseModel):
+    """Create comment request model"""
+    comment_id: str
+    ticket_id: str
+    text: str
+    created_by: str
+
+
+class SearchCommentsRequest(BaseModel):
+    """Search comments request model"""
+    comment_id: Optional[str] = None
+    ticket_id: Optional[str] = None
+    text: Optional[str] = None
+    created_by: Optional[str] = None
