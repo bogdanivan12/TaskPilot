@@ -30,3 +30,13 @@ class GetProjectResponse(Response):
 class GetAllProjectsResponse(Response):
     """Get all projects response model"""
     projects: Optional[List[models.Project]] = None
+
+
+class GetTicketResponse(Response):
+    """Get ticket response model"""
+    ticket: Optional[models.Ticket] = None
+
+
+class GetAllTicketsResponse(Response):
+    """Get all tickets response model"""
+    tickets: Optional[List[models.Ticket]] = None

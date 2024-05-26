@@ -1,6 +1,4 @@
 """File containing helper functions for the endpoints of the API service."""
-import datetime
-
 from taskpilot.api import db_operations as db
 from taskpilot.api import api_models as models
 from taskpilot.common import config_info
@@ -269,6 +267,14 @@ def delete_project(project_id: str) -> api_resp.Response:
     Delete a project
     """
     index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
+
+    child_tickets_req = api_req.SearchTicketsRequest(project_id=project_id)
+    child_tickets_resp = search_tickets(child_tickets_req)
+    child_tickets = [ticket.ticket_id for ticket in child_tickets_resp.tickets]
+
+    for ticket_id in child_tickets:
+        delete_ticket(ticket_id)
+
     db_delete_result = db.delete_item(index, project_id)
 
     if not db_delete_result:
@@ -345,4 +351,171 @@ def search_projects(search_req: api_req.SearchProjectsRequest
     )
     logger.info(response.message)
 
+    return response
+
+
+def get_ticket(ticket_id: str) -> api_resp.GetTicketResponse:
+    """
+    Get a ticket by id
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    db_get_result = db.get_item(index, ticket_id)
+
+    if not db_get_result:
+        response = api_resp.GetTicketResponse(
+            message=f"Ticket with id '{ticket_id}' not found",
+            code=404,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    ticket = models.Ticket.parse_obj(db_get_result)
+    response = api_resp.GetTicketResponse(
+        message=f"Ticket with id '{ticket_id}' retrieved successfully",
+        ticket=ticket
+    )
+    logger.info(response.message)
+    return response
+
+
+def create_ticket(
+        ticket_req: api_req.CreateTicketRequest) -> api_resp.Response:
+    """
+    Create a ticket
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    ticket_dict = ticket_req.dict()
+    ticket_dict["created_at"] = config_info.get_current_time()
+    ticket_dict["modified_at"] = ticket_dict["created_at"]
+    ticket_dict["modified_by"] = ticket_dict["created_by"]
+    ticket = models.Ticket.parse_obj(ticket_dict)
+
+    db_create_result = db.create_item(
+        index, ticket.dict(), ticket.ticket_id)
+
+    if not db_create_result:
+        response = api_resp.Response(
+            message=f"Failed to create ticket with id '{ticket.ticket_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Ticket with id '{ticket.ticket_id}' created successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def update_ticket(
+        ticket_id: str,
+        ticket_req: api_req.UpdateTicketRequest) -> api_resp.Response:
+    """
+    Update a ticket
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    ticket_dict = ticket_req.dict()
+    ticket_dict["modified_at"] = config_info.get_current_time()
+
+    db_update_result = db.update_item(index, ticket_id, ticket_dict)
+
+    if not db_update_result:
+        response = api_resp.Response(
+            message=f"Failed to update ticket with id '{ticket_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Ticket with id '{ticket_id}' updated successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def delete_ticket(ticket_id: str) -> api_resp.Response:
+    """
+    Delete a ticket
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    db_delete_result = db.delete_item(index, ticket_id)
+
+    if not db_delete_result:
+        response = api_resp.Response(
+            message=f"Failed to delete ticket with id '{ticket_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Ticket with id '{ticket_id}' deleted successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def get_all_tickets() -> api_resp.GetAllTicketsResponse:
+    """
+    Get all tickets
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    db_get_all_result = db.get_all_items(index)
+
+    if db_get_all_result is None:
+        response = api_resp.GetAllTicketsResponse(
+            message="Failed to retrieve all tickets",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    tickets = [models.Ticket.parse_obj(ticket)
+               for ticket in db_get_all_result.values()]
+    response = api_resp.GetAllTicketsResponse(
+        message="All tickets retrieved successfully",
+        tickets=tickets
+    )
+    logger.info(response.message)
+    return response
+
+
+def search_tickets(search_req: api_req.SearchTicketsRequest
+                         ) -> api_resp.GetAllTicketsResponse:
+    """
+    Search for tickets
+    """
+    index = config_info.DB_INDEXES[config_info.Entities.TICKET]
+    query_dict = search_req.dict()
+    query_dict = {
+        field: value
+        for field, value in query_dict.items()
+        if value is not None
+    }
+
+    db_search_result = db.search_items(index, query_dict)
+
+    if db_search_result is None:
+        response = api_resp.GetAllTicketsResponse(
+            message="Failed to search for tickets",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    tickets = [models.Ticket.parse_obj(ticket)
+               for ticket in db_search_result.values()]
+    response = api_resp.GetAllTicketsResponse(
+        message="Tickets retrieved successfully",
+        tickets=tickets
+    )
+    logger.info(response.message)
     return response

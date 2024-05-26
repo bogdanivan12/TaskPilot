@@ -107,5 +107,12 @@ API_ROUTES = {
     APIOperations.PROJECTS_UPDATE: "/api/projects/{project_id}",
     APIOperations.PROJECTS_DELETE: "/api/projects/{project_id}",
     APIOperations.PROJECTS_ALL: "/api/projects",
-    APIOperations.PROJECTS_SEARCH: "/api/projects/search"
+    APIOperations.PROJECTS_SEARCH: "/api/projects/search",
+
+    APIOperations.TICKETS_GET: "/api/tickets/{ticket_id}",
+    APIOperations.TICKETS_CREATE: "/api/tickets",
+    APIOperations.TICKETS_UPDATE: "/api/tickets/{ticket_id}",
+    APIOperations.TICKETS_DELETE: "/api/tickets/{ticket_id}",
+    APIOperations.TICKETS_ALL: "/api/tickets",
+    APIOperations.TICKETS_SEARCH: "/api/tickets/search",
 }

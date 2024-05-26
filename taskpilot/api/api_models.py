@@ -1,6 +1,4 @@
 """API models"""
-import datetime
-
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -12,6 +10,7 @@ class User(BaseModel):
     full_name: str
     hashed_password: str
     is_admin: bool = False
+    disabled: bool = False
     favorite_tickets: List[str] = []
     projects: List[str] = []
 
@@ -51,3 +50,4 @@ class Project(BaseModel):
     created_at: str
     modified_by: str
     modified_at: str
+    members: List[str] = []

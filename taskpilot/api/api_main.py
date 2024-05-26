@@ -151,6 +151,70 @@ async def search_projects(search_req: api_req.SearchProjectsRequest
     return response
 
 
+@app.get(config_info.API_ROUTES[config_info.APIOperations.TICKETS_GET],
+         tags=["Tickets"])
+async def get_ticket(ticket_id: str) -> api_resp.GetTicketResponse:
+    """
+    Get a ticket by id
+    """
+    response = api_help.get_ticket(ticket_id)
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.TICKETS_CREATE],
+          tags=["Tickets"])
+async def create_ticket(
+        ticket_req: api_req.CreateTicketRequest) -> api_resp.Response:
+    """
+    Create a ticket
+    """
+    response = api_help.create_ticket(ticket_req)
+    return response
+
+
+@app.put(config_info.API_ROUTES[config_info.APIOperations.TICKETS_UPDATE],
+         tags=["Tickets"])
+async def update_ticket(
+        ticket_id: str,
+        ticket_req: api_req.UpdateTicketRequest) -> api_resp.Response:
+    """
+    Update a ticket
+    """
+    response = api_help.update_ticket(ticket_id, ticket_req)
+    return response
+
+
+@app.delete(config_info.API_ROUTES[config_info.APIOperations.TICKETS_DELETE],
+            tags=["Tickets"])
+async def delete_ticket(ticket_id: str) -> api_resp.Response:
+    """
+    Delete a ticket
+    """
+    response = api_help.delete_ticket(ticket_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[config_info.APIOperations.TICKETS_ALL],
+         tags=["Tickets"])
+async def get_all_tickets() -> api_resp.GetAllTicketsResponse:
+    """
+    Get all tickets
+    """
+    response = api_help.get_all_tickets()
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.TICKETS_SEARCH],
+          tags=["Tickets"])
+async def search_tickets(search_req: api_req.SearchTicketsRequest
+                         ) -> api_resp.GetAllTicketsResponse:
+    """
+    Search for tickets
+    """
+    response = api_help.search_tickets(search_req)
+    return response
+
+
 if __name__ == "__main__":
     uvicorn.run(
         app=config_info.API_APP,
