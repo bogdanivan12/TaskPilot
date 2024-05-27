@@ -12,7 +12,7 @@ class User(BaseModel):
     is_admin: bool = False
     disabled: bool = False
     favorite_tickets: List[str] = []
-    projects: List[str] = []
+    member_of: List[str] = []
 
 
 class Ticket(BaseModel):
