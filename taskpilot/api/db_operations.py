@@ -127,7 +127,7 @@ def search_items(
             "query": {
                 "bool": {
                     "filter": [
-                        {"match": {field: value}}
+                        {"match": {f"{field}.keyword": value}}
                         for field, value in query_dict.items()
                     ]
                 }

@@ -798,7 +798,8 @@ def create_ticket(
     """
     created_by = get_user(ticket_req.created_by).user
     assignee = get_user(ticket_req.assignee).user
-    if created_by is None or assignee is None:
+    if (created_by is None
+            or (assignee is None and ticket_req.assignee is not None)):
         response = api_resp.Response(
             message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
                     f" due to non-existent user",
@@ -820,7 +821,7 @@ def create_ticket(
         return response
 
     parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
-    if parent_ticket is None:
+    if parent_ticket is None and ticket_req.parent_ticket is not None:
         response = api_resp.Response(
             message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
                     f" due to non-existent parent ticket",
@@ -864,7 +865,8 @@ def update_ticket(
     """
     modified_by = get_user(ticket_req.modified_by).user
     assignee = get_user(ticket_req.assignee).user
-    if modified_by is None or assignee is None:
+    if (modified_by is None or
+            (assignee is None and ticket_req.assignee is not None)):
         response = api_resp.Response(
             message=f"Failed to update ticket with id '{ticket_id}' due to"
                     f" non-existent user",
@@ -886,7 +888,7 @@ def update_ticket(
         return response
 
     parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
-    if parent_ticket is None:
+    if parent_ticket is None and ticket_req.parent_ticket is not None:
         response = api_resp.Response(
             message=f"Failed to update ticket with id '{ticket_id}' due to"
                     f" non-existent parent ticket",

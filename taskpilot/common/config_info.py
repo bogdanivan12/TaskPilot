@@ -10,7 +10,10 @@ HOST = "0.0.0.0"
 API_PORT = 8080
 API_APP = "api_main:app"
 
-DB_URL = "http://taskpilot-elastic:9200"
+DB_PORT = 9200
+
+DB_URL = f"http://taskpilot-elastic:{DB_PORT}"
+API_URL = f"http://taskpilot-api:{API_PORT}"
 
 LOGGING_FORMAT = (
     "[%(asctime)s] [PID: %(process)d] [%(filename)s] "
@@ -62,6 +65,30 @@ DB_INDEXES = {
     Entities.TICKET: "tickets",
     Entities.COMMENT: "comments"
 }
+
+
+class TicketTypes:
+    """Constants for accepted ticket types"""
+    EPIC = "Epic"
+    STORY = "Story"
+    TASK = "Task"
+    BUG = "Bug"
+
+
+class TicketPriorities:
+    """Constants for accepted ticket priorities"""
+    LOW = "Low"
+    NORMAL = "Normal"
+    HIGH = "High"
+    CRITICAL = "Critical"
+
+
+class TicketStatuses:
+    """Constants for accepted ticket statuses"""
+    OPEN = "Open"
+    IN_PROGRESS = "In Progress"
+    RESOLVED = "Resolved"
+    CLOSED = "Closed"
 
 
 class APIOperations:
