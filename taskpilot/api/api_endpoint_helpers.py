@@ -13,6 +13,8 @@ def get_user(user_id: str) -> api_resp.GetUserResponse:
     """
     Get a user by id
     """
+    user_id = user_id.lower()
+
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     db_get_result = db.get_item(index, user_id)
 
@@ -43,6 +45,7 @@ def create_user(user_req: api_req.CreateUserRequest) -> api_resp.Response:
     password = user_dict.pop("password")
     hashed_password = config_info.hash_password(password)
     user_dict["hashed_password"] = hashed_password
+    user_dict["username"] = user_dict["username"].lower()
     user = models.User.parse_obj(user_dict)
 
     db_create_result = db.create_item(index, user.dict(), user.username)
@@ -68,6 +71,20 @@ def update_user(user_id: str,
     """
     Update a user
     """
+    user_id = user_id.lower()
+
+    for project_id in user_req.member_of:
+        project = get_project(project_id).project
+        if project is None:
+            response = api_resp.Response(
+                message=f"Failed to update user with id '{user_id}' due to"
+                        f" non-existent project with id '{project_id}'",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
+
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     user_dict = user_req.dict()
     password = user_dict.pop("password")
@@ -98,6 +115,8 @@ def delete_user(user_id: str) -> api_resp.Response:
     """
     Delete a user
     """
+    user_id = user_id.lower()
+
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     db_delete_result = db.delete_item(index, user_id)
 
@@ -148,6 +167,8 @@ def search_users(search_req: api_req.SearchUsersRequest
     """
     Search for users
     """
+    search_req.username = search_req.username.lower()
+
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     query_dict = search_req.dict()
     query_dict = {
@@ -182,6 +203,8 @@ def get_all_assigned_tickets(user_id: str) -> api_resp.GetAllTicketsResponse:
     """
     Get all tickets assigned to a user
     """
+    user_id = user_id.lower()
+
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
     query_dict = {"assignee": user_id}
 
@@ -212,6 +235,19 @@ def assign_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
     """
     Assign a ticket to a user
     """
+    user_id = user_id.lower()
+
+    ticket = get_ticket(ticket_id).ticket
+    if ticket is None:
+        response = api_resp.Response(
+            message=f"Failed to assign ticket with id '{ticket_id}' to user"
+                    f" with id '{user_id}' due to non-existent ticket",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
     ticket_dict = {"assignee": user_id}
 
@@ -239,6 +275,8 @@ def unassign_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
     """
     Unassign a ticket from a user
     """
+    user_id = user_id.lower()
+
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
     ticket_dict = {"assignee": None}
 
@@ -266,10 +304,23 @@ def add_favorite_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
     """
     Add a ticket to a user's favorites
     """
+    user_id = user_id.lower()
+
+    ticket = get_ticket(ticket_id).ticket
+    if ticket is None:
+        response = api_resp.Response(
+            message=f"Failed to add ticket with id '{ticket_id}' to user with"
+                    f" id '{user_id}' favorites due to non-existent ticket",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
     index = config_info.DB_INDEXES[config_info.Entities.USER]
-    favorite_tickets = get_user(user_id).user.favorite_tickets
+    favorite_tickets = set(get_user(user_id).user.favorite_tickets)
     favorite_tickets.add(ticket_id)
-    user_update_dict = {"favorite_tickets": favorite_tickets}
+    user_update_dict = {"favorite_tickets": list(favorite_tickets)}
 
     db_update_result = db.update_item(index, user_id, user_update_dict)
 
@@ -295,6 +346,8 @@ def remove_favorite_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
     """
     Remove a ticket from a user's favorites
     """
+    user_id = user_id.lower()
+
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     favorite_tickets = set(get_user(user_id).user.favorite_tickets)
     favorite_tickets.discard(ticket_id)
@@ -359,6 +412,31 @@ def create_project(
     project_dict["modified_by"] = project_dict["created_by"]
     project = models.Project.parse_obj(project_dict)
 
+    owner_user = get_user(project.created_by).user
+    if owner_user is None:
+        response = api_resp.Response(
+            message=f"Failed to create project with id '{project.project_id}'"
+                    f" due to non-existent user with id '{project.created_by}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    members = set(project.members)
+    for member_id in members:
+        member_user = get_user(member_id).user
+        if member_user is None:
+            response = api_resp.Response(
+                message=f"Failed to create project with id"
+                        f" '{project.project_id}' due to non-existent member"
+                        f" with id '{member_id}'",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
+
     db_create_result = db.create_item(
         index, project.dict(), project.project_id)
 
@@ -387,6 +465,31 @@ def update_project(
     index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
     project_dict = project_req.dict()
     project_dict["modified_at"] = config_info.get_current_time()
+
+    modified_by = project_dict.get("modified_by")
+    modified_by_user = get_user(modified_by).user
+    if modified_by_user is None:
+        response = api_resp.Response(
+            message=f"Failed to update project with id '{project_id}' due to"
+                    f" non-existent user with id {modified_by}",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    members = set(project_dict.get("members", []))
+    for member_id in members:
+        member_user = get_user(member_id).user
+        if member_user is None:
+            response = api_resp.Response(
+                message=f"Failed to update project with id '{project_id}' due"
+                        f" to non-existent member with id '{member_id}'",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
 
     db_update_result = db.update_item(index, project_id, project_dict)
 
@@ -545,7 +648,29 @@ def add_member_to_project(project_id: str,
     Add a member to a project
     """
     projects_index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
-    project_dict = get_project(project_id).project.dict()
+    project = get_project(project_id).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to add user with id '{user_id}' to project with"
+                    f" id '{project_id}' due to non-existent project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to add user with id '{user_id}' to project with"
+                    f" id '{project_id}' due to non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    project_dict = project.dict()
     members = project_dict["members"]
     members.add(user_id)
     project_dict["members"] = members
@@ -555,9 +680,9 @@ def add_member_to_project(project_id: str,
 
     users_index = config_info.DB_INDEXES[config_info.Entities.USER]
     user_dict = get_user(user_id).user.dict()
-    projects = user_dict["projects"]
+    projects = set(user_dict["member_of"])
     projects.add(project_id)
-    user_dict["projects"] = projects
+    user_dict["member_of"] = list(projects)
 
     db_update_user_result = db.update_item(users_index, user_id, user_dict)
 
@@ -585,7 +710,18 @@ def remove_member_from_project(project_id: str,
     Remove a member from a project
     """
     projects_index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
-    project_dict = get_project(project_id).project.dict()
+    project = get_project(project_id).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to remove user with id '{user_id}' from project"
+                    f" with id '{project_id}' due to non-existent project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    project_dict = project.dict()
     members = set(project_dict["members"])
     members.discard(user_id)
     project_dict["members"] = list(members)
@@ -594,10 +730,21 @@ def remove_member_from_project(project_id: str,
                                               project_dict)
 
     users_index = config_info.DB_INDEXES[config_info.Entities.USER]
-    user_dict = get_user(user_id).user.dict()
-    projects = set(user_dict["projects"])
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to remove user with id '{user_id}' from project"
+                    f" with id '{project_id}' due to non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    user_dict = user.dict()
+    projects = set(user_dict["member_of"])
     projects.discard(project_id)
-    user_dict["projects"] = list(projects)
+    user_dict["member_of"] = list(projects)
 
     db_update_user_result = db.update_item(users_index, user_id, user_dict)
 
@@ -649,6 +796,41 @@ def create_ticket(
     """
     Create a ticket
     """
+    created_by = get_user(ticket_req.created_by).user
+    assignee = get_user(ticket_req.assignee).user
+    if (created_by is None
+            or (assignee is None and ticket_req.assignee is not None)):
+        response = api_resp.Response(
+            message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
+                    f" due to non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    parent_project = get_project(ticket_req.parent_project).project
+    if parent_project is None:
+        response = api_resp.Response(
+            message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
+                    f" due to non-existent project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
+    if parent_ticket is None and ticket_req.parent_ticket is not None:
+        response = api_resp.Response(
+            message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
+                    f" due to non-existent parent ticket",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
     ticket_dict = ticket_req.dict()
     ticket_dict["created_at"] = config_info.get_current_time()
@@ -681,6 +863,41 @@ def update_ticket(
     """
     Update a ticket
     """
+    modified_by = get_user(ticket_req.modified_by).user
+    assignee = get_user(ticket_req.assignee).user
+    if (modified_by is None or
+            (assignee is None and ticket_req.assignee is not None)):
+        response = api_resp.Response(
+            message=f"Failed to update ticket with id '{ticket_id}' due to"
+                    f" non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    parent_project = get_project(ticket_req.parent_project).project
+    if parent_project is None:
+        response = api_resp.Response(
+            message=f"Failed to update ticket with id '{ticket_id}' due to"
+                    f" non-existent project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
+    if parent_ticket is None and ticket_req.parent_ticket is not None:
+        response = api_resp.Response(
+            message=f"Failed to update ticket with id '{ticket_id}' due to"
+                    f" non-existent parent ticket",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
     ticket_dict = ticket_req.dict()
     ticket_dict["modified_at"] = config_info.get_current_time()
@@ -924,6 +1141,30 @@ def create_comment(
     """
     Create a comment
     """
+    user = get_user(comment_req.created_by).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to create comment with id"
+                    f" '{comment_req.comment_id}' due to non-existent user"
+                    f" with id '{comment_req.created_by}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    ticket = get_ticket(comment_req.ticket_id).ticket
+    if ticket is None:
+        response = api_resp.Response(
+            message=f"Failed to create comment with id"
+                    f" '{comment_req.comment_id}' due to non-existent ticket"
+                    f" with id '{comment_req.ticket_id}'",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
     index = config_info.DB_INDEXES[config_info.Entities.COMMENT]
     comment_dict = comment_req.dict()
     comment_dict["created_at"] = config_info.get_current_time()
