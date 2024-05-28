@@ -11,7 +11,7 @@ API_PORT = 8080
 API_APP = "api_main:app"
 
 DB_PORT = 9200
-UI_PORT = 8000
+UI_PORT = 8081
 
 DB_URL = f"http://taskpilot-elastic:{DB_PORT}"
 API_URL = f"http://taskpilot-api:{API_PORT}"
@@ -191,6 +191,7 @@ class UIPages:
     REGISTER = "register"
     PROJECTS = "projects"
     PROJECT = "project"
+    TICKETS = "tickets"
     TICKET = "ticket"
     PROFILE = "profile"
     NOT_FOUND = "not_found"

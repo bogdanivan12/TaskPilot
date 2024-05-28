@@ -1,5 +1,4 @@
 """Main UI file for the TaskPilot application"""
-from typing import Optional
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -40,15 +39,21 @@ def test_page() -> None:
 
 
 @ui.page("/login")
-def login() -> Optional[RedirectResponse]:
+def login() -> None:
     """Login page for the TaskPilot application"""
     return ui_help.login()
 
 
 @ui.page("/register")
-def register() -> Optional[RedirectResponse]:
+def register() -> None:
     """Register page for the TaskPilot application"""
     return ui_help.register()
+
+
+@ui.page("/projects")
+def projects() -> None:
+    """Projects page for the TaskPilot application"""
+    return ui_help.projects()
 
 
 if __name__ in {"__main__", "__mp_main__"}:
