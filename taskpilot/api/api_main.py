@@ -4,8 +4,7 @@ import uvicorn
 
 from fastapi.responses import RedirectResponse
 
-from taskpilot.common import config_info
-from taskpilot.api import api_request_classes as api_req
+from taskpilot.common import config_info, api_request_classes as api_req
 from taskpilot.api import api_endpoint_helpers as api_help
 from taskpilot.api import api_response_classes as api_resp
 
@@ -142,6 +141,16 @@ async def remove_favorite_ticket(user_id: str,
     Remove a ticket from a user's favorites
     """
     response = api_help.remove_favorite_ticket(user_id, ticket_id)
+    return response
+
+
+@app.post(config_info.API_ROUTES[config_info.APIOperations.USERS_LOGIN],
+          tags=["Users"])
+async def login_user(login_req: api_req.LoginRequest) -> api_resp.Response:
+    """
+    Log in a user
+    """
+    response = api_help.login_user(login_req)
     return response
 
 

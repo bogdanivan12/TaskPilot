@@ -33,6 +33,12 @@ class SearchUsersRequest(BaseModel):
     disabled: Optional[bool] = None
 
 
+class LoginRequest(BaseModel):
+    """Login request model"""
+    username: str
+    password: str
+
+
 class CreateProjectRequest(BaseModel):
     """Create project request model"""
     project_id: str

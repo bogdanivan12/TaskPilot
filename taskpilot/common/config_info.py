@@ -11,6 +11,7 @@ API_PORT = 8080
 API_APP = "api_main:app"
 
 DB_PORT = 9200
+UI_PORT = 8000
 
 DB_URL = f"http://taskpilot-elastic:{DB_PORT}"
 API_URL = f"http://taskpilot-api:{API_PORT}"
@@ -104,6 +105,7 @@ class APIOperations:
     USERS_UNASSIGN_TICKET = "users_unassign_ticket"
     USERS_ADD_FAVORITE_TICKET = "users_add_favorite_ticket"
     USERS_REMOVE_FAVORITE_TICKET = "users_remove_favorite_ticket"
+    USERS_LOGIN = "users_login"
 
     PROJECTS_GET = "projects_get"
     PROJECTS_CREATE = "projects_create"
@@ -149,6 +151,7 @@ API_ROUTES = {
                                              "/favorites/{ticket_id}",
     APIOperations.USERS_REMOVE_FAVORITE_TICKET: "/api/users/{user_id}/tickets"
                                                 "/favorites/{ticket_id}",
+    APIOperations.USERS_LOGIN: "/api/users/login",
 
     APIOperations.PROJECTS_GET: "/api/projects/{project_id}",
     APIOperations.PROJECTS_CREATE: "/api/projects",
@@ -179,3 +182,33 @@ API_ROUTES = {
     APIOperations.COMMENTS_ALL: "/api/comments",
     APIOperations.COMMENTS_SEARCH: "/api/comments/search"
 }
+
+
+class UIPages:
+    """Constants for the TaskPilot UI Pages"""
+    HOME = "home"
+    LOGIN = "login"
+    REGISTER = "register"
+    PROJECTS = "projects"
+    PROJECT = "project"
+    TICKET = "ticket"
+    PROFILE = "profile"
+    NOT_FOUND = "not_found"
+
+
+UI_ROUTES = {
+    UIPages.HOME: "/",
+    UIPages.LOGIN: "/login",
+    UIPages.REGISTER: "/register",
+    UIPages.PROJECTS: "/projects",
+    UIPages.PROJECT: "/projects/{project_id}",
+    UIPages.TICKET: "/projects/{project_id}/tickets/{ticket_id}",
+    UIPages.PROFILE: "/profile",
+    UIPages.NOT_FOUND: "/404"
+}
+
+UNRESTRICTED_PAGE_ROUTES = [
+    UI_ROUTES[UIPages.LOGIN],
+    UI_ROUTES[UIPages.REGISTER],
+    UI_ROUTES[UIPages.NOT_FOUND]
+]

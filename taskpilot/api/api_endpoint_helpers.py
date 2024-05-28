@@ -1,10 +1,8 @@
 """File containing helper functions for the endpoints of the API service."""
 from taskpilot.api import db_operations as db
-from taskpilot.api import api_models as models
-from taskpilot.common import config_info
+from taskpilot.common import config_info, api_request_classes as api_req
+from taskpilot.common import models
 from taskpilot.api import api_response_classes as api_resp
-from taskpilot.api import api_request_classes as api_req
-
 
 logger = config_info.get_logger()
 
@@ -48,11 +46,22 @@ def create_user(user_req: api_req.CreateUserRequest) -> api_resp.Response:
     user_dict["username"] = user_dict["username"].lower()
     user = models.User.parse_obj(user_dict)
 
+    existent_user = get_user(user.username).user
+    if existent_user is not None:
+        response = api_resp.Response(
+            message=f"Failed to create user with id '{user.username}': user"
+                    f" already exists",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
     db_create_result = db.create_item(index, user.dict(), user.username)
 
     if not db_create_result:
         response = api_resp.Response(
-            message="Failed to create user with id '{user_req.username}'",
+            message=f"Failed to create user with id '{user_req.username}'",
             code=424,
             result=False
         )
@@ -372,6 +381,40 @@ def remove_favorite_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
                 f" '{user_id}' favorites successfully"
     )
     logger.info(response.message)
+    return response
+
+
+def login_user(login_req: api_req.LoginRequest) -> api_resp.Response:
+    """
+    Log in a user
+    """
+    username = login_req.username.lower()
+    password = login_req.password
+    hashed_password = config_info.hash_password(password)
+    user = get_user(username).user
+
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to log in: incorrect username or password",
+            code=401,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if user.hashed_password == hashed_password:
+        response = api_resp.Response(
+            message=f"User with id '{username}' logged in successfully"
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"Failed to log in: incorrect username or password",
+        code=401,
+        result=False
+    )
+    logger.error(response.message)
     return response
 
 

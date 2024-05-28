@@ -16,6 +16,7 @@ start_service () {
 }
 
 start_service api 8080
+start_service ui 8000
 
 
 # Elasticsearch
