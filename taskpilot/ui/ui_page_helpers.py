@@ -233,7 +233,8 @@ def projects() -> None:
         # Create a dictionary to store the checkboxes
         checkboxes = {}
 
-        with ui.expansion("Members", icon="people").classes("w-4/5"):
+        with ui.expansion("Members", icon="people").classes(
+                "w-4/5") as all_users_expansion:
             for user_id in all_user_ids:
                 checkboxes[user_id] = ui.checkbox(user_id).classes("w-4/5")
 
@@ -282,6 +283,7 @@ def projects() -> None:
         project_id.value = ""
         title.value = ""
         description.value = ""
+        all_users_expansion.close()
         # Uncheck all checkboxes
         for checkbox in checkboxes.values():
             checkbox.value = False
