@@ -233,10 +233,20 @@ def projects() -> None:
         # Create a dictionary to store the checkboxes
         checkboxes = {}
 
-        with ui.expansion("Members", icon="people").classes(
+        with ui.expansion("Add Members", icon="people").classes(
                 "w-4/5") as all_users_expansion:
+            search_member = ui.input(
+                label="Search Member",
+                on_change=lambda: [
+                    checkbox.set_visibility(
+                        search_member.value.lower() in user_id.lower()
+                        or not search_member
+                    )
+                    for user_id, checkbox in checkboxes.items()
+                ]
+            ).classes("w-full")
             for user_id in all_user_ids:
-                checkboxes[user_id] = ui.checkbox(user_id).classes("w-4/5")
+                checkboxes[user_id] = ui.checkbox(user_id).classes("w-full")
 
         def create_button_clicked():
             selected_user_ids = [
@@ -283,17 +293,20 @@ def projects() -> None:
         project_id.value = ""
         title.value = ""
         description.value = ""
+        search_member.value = ""
         all_users_expansion.close()
         # Uncheck all checkboxes
         for checkbox in checkboxes.values():
             checkbox.value = False
         dialog.open()
 
-    with ui.column().classes("absolute-center items-center"):
-        ui.label("Projects").classes("text-2xl")
-        ui.button("Create Project").on(
-            "click",
-            open_dialog
+    with ui.row().classes("items-center justify-between w-full self-center px-6 py-2"):
+        ui.label("Projects").classes("text-5xl")
+        ui.button(
+            text="Create Project",
+            on_click=open_dialog
         ).classes("text-white")
+
+    ui.separator()
 
     return None
