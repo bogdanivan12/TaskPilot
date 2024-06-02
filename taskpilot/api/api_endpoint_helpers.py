@@ -387,7 +387,7 @@ def login_user(login_req: api_req.LoginRequest) -> api_resp.Response:
 
     if user is None:
         response = api_resp.Response(
-            message=f"Failed to log in: incorrect username or password",
+            message="Failed to log in: incorrect username or password",
             code=401,
             result=False
         )
@@ -402,11 +402,32 @@ def login_user(login_req: api_req.LoginRequest) -> api_resp.Response:
         return response
 
     response = api_resp.Response(
-        message=f"Failed to log in: incorrect username or password",
+        message="Failed to log in: incorrect username or password",
         code=401,
         result=False
     )
     logger.error(response.message)
+    return response
+
+
+def get_user_projects(user_id: str) -> api_resp.GetAllProjectsResponse:
+    """
+    Get all projects for a user
+    """
+    user_id = user_id.lower()
+
+    all_projects = get_all_projects().projects
+    user_projects = [
+        project for project in all_projects
+        if user_id in project.members or user_id == project.created_by
+    ]
+
+    response = api_resp.GetAllProjectsResponse(
+        message=f"All projects for user with id '{user_id}' retrieved"
+                f" successfully",
+        projects=user_projects
+    )
+    logger.info(response.message)
     return response
 
 
@@ -453,7 +474,8 @@ def create_project(
     if owner_user is None:
         response = api_resp.Response(
             message=f"Failed to create project with id '{project.project_id}'"
-                    f" due to non-existent user with id '{project.created_by}'",
+                    f" due to non-existent user with id"
+                    f" '{project.created_by}'",
             code=424,
             result=False
         )
@@ -758,7 +780,6 @@ def remove_member_from_project(project_id: str,
     db_update_project_result = db.update_item(projects_index, project_id,
                                               project_dict)
 
-    users_index = config_info.DB_INDEXES[config_info.Entities.USER]
     user = get_user(user_id).user
     if user is None:
         response = api_resp.Response(

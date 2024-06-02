@@ -1,3 +1,4 @@
+"""Populate the database with dummy data"""
 import requests
 
 from taskpilot.common import config_info, api_request_classes as api_req

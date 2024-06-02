@@ -154,6 +154,16 @@ async def login_user(login_req: api_req.LoginRequest) -> api_resp.Response:
     return response
 
 
+@app.get(config_info.API_ROUTES[config_info.APIOperations.USERS_ALL_PROJECTS],
+         tags=["Users"])
+async def get_user_projects(user_id: str) -> api_resp.GetAllProjectsResponse:
+    """
+    Get all projects for a user
+    """
+    response = api_help.get_user_projects(user_id)
+    return response
+
+
 @app.get(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_GET],
          tags=["Projects"])
 async def get_project(project_id: str) -> api_resp.GetProjectResponse:

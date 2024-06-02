@@ -107,6 +107,7 @@ class APIOperations:
     USERS_ADD_FAVORITE_TICKET = "users_add_favorite_ticket"
     USERS_REMOVE_FAVORITE_TICKET = "users_remove_favorite_ticket"
     USERS_LOGIN = "users_login"
+    USERS_ALL_PROJECTS = "users_all_projects"
 
     PROJECTS_GET = "projects_get"
     PROJECTS_CREATE = "projects_create"
@@ -153,6 +154,7 @@ API_ROUTES = {
     APIOperations.USERS_REMOVE_FAVORITE_TICKET: "/api/users/{user_id}/tickets"
                                                 "/favorites/{ticket_id}",
     APIOperations.USERS_LOGIN: "/api/users/login",
+    APIOperations.USERS_ALL_PROJECTS: "/api/users/{user_id}/projects",
 
     APIOperations.PROJECTS_GET: "/api/projects/{project_id}",
     APIOperations.PROJECTS_CREATE: "/api/projects",
@@ -204,6 +206,7 @@ UI_ROUTES = {
     UIPages.REGISTER: "/register",
     UIPages.PROJECTS: "/projects",
     UIPages.PROJECT: "/projects/{project_id}",
+    UIPages.TICKETS: "/tickets",
     UIPages.TICKET: "/tickets/{ticket_id}",
     UIPages.PROFILE: "/profile",
     UIPages.NOT_FOUND: "/404"

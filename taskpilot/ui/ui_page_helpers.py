@@ -75,10 +75,12 @@ def main_page() -> None:
     """Main page for the TaskPilot application"""
     ui.markdown(
         f"Welcome back, **{app.storage.user.get('username', '')}**!"
-    ).classes("text-5xl items-center justify-between w-full self-center px-6 py-2")
+    ).classes("text-5xl items-center justify-between w-full self-center"
+              " px-6 py-2")
     ui.label(
-        f"Here is a list of your assigned tickets that aren't yet closed:"
-    ).classes("text-2xl items-center justify-between w-full self-center px-6 py-2")
+        "Here is a list of your assigned tickets that aren't yet closed:"
+    ).classes("text-2xl items-center justify-between w-full self-center"
+              " px-6 py-2")
 
     ui.separator()
 
@@ -133,13 +135,6 @@ def main_page() -> None:
                     ui.label(f"Modified by {ticket.modified_by}"
                              f" at {ticket.modified_at}")
             ui.separator()
-
-
-@apply_header
-def test_page() -> None:
-    """Test subpage for the TaskPilot application"""
-    ui.label("This is a test page")
-    return
 
 
 @apply_header
@@ -261,7 +256,7 @@ def register() -> None:
             ),
             icon="arrow_right"
         ).props("flat color=white").classes("place-self-center")
-    return None
+    return
 
 
 @apply_header
@@ -331,11 +326,11 @@ def projects() -> None:
         with ui.row().classes("items-center justify-between"):  # Add this line
             ui.button("Create").on(
                 "click",
-                lambda: create_button_clicked()
+                create_button_clicked
             ).classes("text-white mr-2")
             ui.button("Cancel", color="negative").on(
                 "click",
-                lambda: dialog.close()
+                dialog.close
             ).classes("text-white")
 
     def open_dialog():
@@ -361,24 +356,19 @@ def projects() -> None:
     ui.separator()
 
     with ui.column().classes("items-center w-full self-center px-6 py-2"):
-        all_projects = requests.get(
-            f"{config_info.API_URL}"
-            f"/{config_info.API_ROUTES[APIOps.PROJECTS_ALL]}"
-        ).json()["projects"]
-
         username = app.storage.user.get("username", "")
 
-        get_user_url = (
+        get_user_projects_url = (
             config_info.API_URL
             + "/"
-            + config_info.API_ROUTES[APIOps.USERS_GET].format(user_id=username)
+            + config_info.API_ROUTES[APIOps.USERS_ALL_PROJECTS].format(
+                user_id=username
+            )
         )
-        user = requests.get(get_user_url).json()["user"]
-        user = models.User.parse_obj(user)
-
+        user_projects_response = requests.get(get_user_projects_url).json()
         user_projects = [
-            models.Project.parse_obj(project) for project in all_projects
-            if user.is_admin or username in project["members"]
+            models.Project.parse_obj(project)
+            for project in user_projects_response["projects"]
         ]
 
         if not user_projects:
@@ -411,3 +401,91 @@ def projects() -> None:
             ui.separator()
 
     return None
+
+
+@apply_header
+def tickets() -> None:
+    """Tickets page for the TaskPilot application"""
+    ui.label("Tickets").classes("text-5xl items-center justify-between w-full"
+                                " self-center px-6 py-2")
+    ui.label(
+        "Here is a list of all the tickets that you have access to:"
+    ).classes("text-2xl items-center justify-between w-full self-center"
+              " px-6 py-2")
+
+    ui.separator()
+
+    with ui.column().classes("items-center w-full self-center px-6 py-2"):
+        username = app.storage.user.get("username", "")
+
+        get_user_projects_url = (
+            config_info.API_URL
+            + "/"
+            + config_info.API_ROUTES[APIOps.USERS_ALL_PROJECTS].format(
+                user_id=username
+            )
+        )
+        user_projects_response = requests.get(get_user_projects_url).json()
+        user_projects = [
+            models.Project.parse_obj(project)
+            for project in user_projects_response["projects"]
+        ]
+
+        user_tickets = []
+        for project in user_projects:
+            get_project_tickets_url = (
+                config_info.API_URL
+                + "/"
+                + config_info.API_ROUTES[APIOps.PROJECTS_ALL_TICKETS].format(
+                    project_id=project.project_id
+                )
+            )
+            project_tickets_response = requests.get(
+                get_project_tickets_url).json()
+            project_tickets = [
+                models.Ticket.parse_obj(ticket)
+                for ticket in project_tickets_response["tickets"]
+            ]
+            user_tickets.extend(project_tickets)
+
+        if not user_tickets:
+            ui.label("No tickets").classes("text-2xl")
+            return
+
+        for ticket in user_tickets:
+            with ui.card().classes("w-full"):
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.chip(
+                        text=ticket.ticket_id,
+                        icon="arrow_right",
+                        on_click=lambda: ui.navigate.to(
+                            config_info.UI_ROUTES[
+                                config_info.UIPages.TICKET].format(
+                                ticket_id=ticket.ticket_id
+                            )
+                        )
+                    ).classes("text-white text-base")
+                    ui.label(ticket.title).classes("text-2xl font-bold")
+                    ui.space()
+                    ui.chip(
+                        text=f"Parent Project: {ticket.parent_project}",
+                        icon="arrow_right",
+                        on_click=lambda: ui.navigate.to(
+                            config_info.UI_ROUTES[
+                                config_info.UIPages.PROJECT].format(
+                                project_id=ticket.parent_project
+                            )
+                        )
+                    ).classes("text-white text-base")
+                ui.label(ticket.description).classes("text-lg")
+                ui.separator()
+                ui.label(f"{ticket.type} | Priority: {ticket.priority}"
+                         f" | Status: {ticket.status}").classes("text-base")
+                ui.label(f"Assignee: {ticket.assignee}")
+                ui.separator()
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label(f"Created by {ticket.created_by}"
+                             f" at {ticket.created_at}")
+                    ui.space()
+                    ui.label(f"Modified by {ticket.modified_by}"
+                             f" at {ticket.modified_at}")
