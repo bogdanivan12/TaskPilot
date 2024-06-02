@@ -38,19 +38,19 @@ def test_page() -> None:
     return ui_help.test_page()
 
 
-@ui.page("/login")
+@ui.page(config_info.UI_ROUTES[config_info.UIPages.LOGIN])
 def login() -> None:
     """Login page for the TaskPilot application"""
     return ui_help.login()
 
 
-@ui.page("/register")
+@ui.page(config_info.UI_ROUTES[config_info.UIPages.REGISTER])
 def register() -> None:
     """Register page for the TaskPilot application"""
     return ui_help.register()
 
 
-@ui.page("/projects")
+@ui.page(config_info.UI_ROUTES[config_info.UIPages.PROJECTS])
 def projects() -> None:
     """Projects page for the TaskPilot application"""
     return ui_help.projects()

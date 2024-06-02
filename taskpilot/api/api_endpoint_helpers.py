@@ -1,4 +1,6 @@
 """File containing helper functions for the endpoints of the API service."""
+import uuid
+
 from taskpilot.api import db_operations as db
 from taskpilot.common import config_info, api_request_classes as api_req
 from taskpilot.common import models
@@ -39,6 +41,8 @@ def create_user(user_req: api_req.CreateUserRequest) -> api_resp.Response:
     Create a user
     """
     index = config_info.DB_INDEXES[config_info.Entities.USER]
+    if not user_req.username:
+        user_req.username = str(uuid.uuid4())
     user_dict = user_req.dict()
     password = user_dict.pop("password")
     hashed_password = config_info.hash_password(password)
@@ -81,18 +85,6 @@ def update_user(user_id: str,
     Update a user
     """
     user_id = user_id.lower()
-
-    for project_id in user_req.member_of:
-        project = get_project(project_id).project
-        if project is None:
-            response = api_resp.Response(
-                message=f"Failed to update user with id '{user_id}' due to"
-                        f" non-existent project with id '{project_id}'",
-                code=424,
-                result=False
-            )
-            logger.error(response.message)
-            return response
 
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     user_dict = user_req.dict()
@@ -449,6 +441,8 @@ def create_project(
     Create a project
     """
     index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
+    if not project_req.project_id:
+        project_req.project_id = str(uuid.uuid4())
     project_dict = project_req.dict()
     project_dict["created_at"] = config_info.get_current_time()
     project_dict["modified_at"] = project_dict["created_at"]
@@ -721,15 +715,7 @@ def add_member_to_project(project_id: str,
     db_update_project_result = db.update_item(projects_index, project_id,
                                               project_dict)
 
-    users_index = config_info.DB_INDEXES[config_info.Entities.USER]
-    user_dict = get_user(user_id).user.dict()
-    projects = set(user_dict["member_of"])
-    projects.add(project_id)
-    user_dict["member_of"] = list(projects)
-
-    db_update_user_result = db.update_item(users_index, user_id, user_dict)
-
-    if not db_update_project_result or not db_update_user_result:
+    if not db_update_project_result:
         response = api_resp.Response(
             message=f"Failed to add user with id '{user_id}' to project with"
                     f" id '{project_id}'",
@@ -784,14 +770,7 @@ def remove_member_from_project(project_id: str,
         logger.error(response.message)
         return response
 
-    user_dict = user.dict()
-    projects = set(user_dict["member_of"])
-    projects.discard(project_id)
-    user_dict["member_of"] = list(projects)
-
-    db_update_user_result = db.update_item(users_index, user_id, user_dict)
-
-    if not db_update_project_result or not db_update_user_result:
+    if not db_update_project_result:
         response = api_resp.Response(
             message=f"Failed to remove user with id '{user_id}' from project"
                     f" with id '{project_id}'",
@@ -839,6 +818,8 @@ def create_ticket(
     """
     Create a ticket
     """
+    if not ticket_req.ticket_id:
+        ticket_req.ticket_id = str(uuid.uuid4())
     created_by = get_user(ticket_req.created_by).user
     assignee = get_user(ticket_req.assignee).user
     if (created_by is None
@@ -1184,6 +1165,8 @@ def create_comment(
     """
     Create a comment
     """
+    if not comment_req.comment_id:
+        comment_req.comment_id = str(uuid.uuid4())
     user = get_user(comment_req.created_by).user
     if user is None:
         response = api_resp.Response(

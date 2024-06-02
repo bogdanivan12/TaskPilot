@@ -5,6 +5,7 @@ from nicegui import app, ui
 from taskpilot.common import config_info
 from taskpilot.common import api_request_classes as api_req
 from taskpilot.common.config_info import APIOperations as APIOps
+from taskpilot.common import models
 
 
 def apply_header(func):
@@ -72,17 +73,66 @@ def header_page():
 @apply_header
 def main_page() -> None:
     """Main page for the TaskPilot application"""
-    with ui.column().classes("absolute-center items-center"):
-        ui.label(f"Hello, {app.storage.user['username']}!").classes("text-2xl")
-        ui.button(
-            on_click=lambda: (
-                app.storage.user.clear(),
-                ui.navigate.to(
-                    config_info.UI_ROUTES[config_info.UIPages.LOGIN]
-                )
-            ),
-            icon="logout"
-        ).props("outline round outline-sky-500")
+    ui.markdown(
+        f"Welcome back, **{app.storage.user.get('username', '')}**!"
+    ).classes("text-5xl items-center justify-between w-full self-center px-6 py-2")
+    ui.label(
+        f"Here is a list of your assigned tickets that aren't yet closed:"
+    ).classes("text-2xl items-center justify-between w-full self-center px-6 py-2")
+
+    ui.separator()
+
+    with ui.column().classes("items-center w-full self-center px-6 py-2"):
+        assigned_tickets = requests.get(
+            config_info.API_URL
+            + "/"
+            + config_info.API_ROUTES[APIOps.USERS_ALL_ASSIGNED_TICKETS].format(
+                user_id=app.storage.user.get("username", ""))
+        ).json()["tickets"]
+
+        assigned_tickets = [
+            models.Ticket.parse_obj(ticket) for ticket in assigned_tickets
+            if ticket["status"] != config_info.TicketStatuses.CLOSED
+        ]
+
+        if not assigned_tickets:
+            ui.label("No assigned tickets").classes("text-2xl")
+            return
+
+        for ticket in assigned_tickets:
+            with ui.card().classes("w-full"):
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.chip(
+                        text=ticket.ticket_id,
+                        icon="arrow_right",
+                        on_click=lambda: ui.navigate.to(
+                            config_info.UI_ROUTES[
+                                config_info.UIPages.TICKET].format(
+                                ticket_id=ticket.ticket_id
+                            )
+                        )
+                    ).classes("text-white text-base")
+                    ui.label(ticket.title).classes("text-2xl font-bold")
+                    ui.space()
+                    ui.chip(
+                        text=f"Parent Project: {ticket.parent_project}",
+                        icon="arrow_right",
+                        on_click=lambda: ui.navigate.to(
+                            config_info.UI_ROUTES[
+                                config_info.UIPages.PROJECT].format(
+                                project_id=ticket.parent_project
+                            )
+                        )
+                    ).classes("text-white text-base")
+                ui.label(ticket.description).classes("text-lg")
+                ui.separator()
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label(f"Created by {ticket.created_by}"
+                             f" at {ticket.created_at}")
+                    ui.space()
+                    ui.label(f"Modified by {ticket.modified_by}"
+                             f" at {ticket.modified_at}")
+            ui.separator()
 
 
 @apply_header
@@ -300,7 +350,8 @@ def projects() -> None:
             checkbox.value = False
         dialog.open()
 
-    with ui.row().classes("items-center justify-between w-full self-center px-6 py-2"):
+    with ui.row().classes("items-center justify-between w-full self-center"
+                          " px-6 py-2"):
         ui.label("Projects").classes("text-5xl")
         ui.button(
             text="Create Project",
@@ -308,5 +359,55 @@ def projects() -> None:
         ).classes("text-white")
 
     ui.separator()
+
+    with ui.column().classes("items-center w-full self-center px-6 py-2"):
+        all_projects = requests.get(
+            f"{config_info.API_URL}"
+            f"/{config_info.API_ROUTES[APIOps.PROJECTS_ALL]}"
+        ).json()["projects"]
+
+        username = app.storage.user.get("username", "")
+
+        get_user_url = (
+            config_info.API_URL
+            + "/"
+            + config_info.API_ROUTES[APIOps.USERS_GET].format(user_id=username)
+        )
+        user = requests.get(get_user_url).json()["user"]
+        user = models.User.parse_obj(user)
+
+        user_projects = [
+            models.Project.parse_obj(project) for project in all_projects
+            if user.is_admin or username in project["members"]
+        ]
+
+        if not user_projects:
+            ui.label("No projects").classes("text-2xl")
+            return
+
+        for project in user_projects:
+            with ui.card().classes("w-full"):
+                with ui.row().classes("items-center justify-between"):
+                    ui.chip(
+                        text=project.project_id,
+                        icon="arrow_right",
+                        on_click=lambda: ui.navigate.to(
+                            config_info.UI_ROUTES[
+                                config_info.UIPages.PROJECT].format(
+                                project_id=project.project_id
+                            )
+                        )
+                    ).classes("text-white text-base")
+                    ui.label(project.title).classes("text-2xl font-bold")
+                ui.label(project.description).classes("text-lg")
+                ui.markdown(f"**Members:** {', '.join(project.members)}")
+                ui.separator()
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label(f"Created by {project.created_by}"
+                             f" at {project.created_at}")
+                    ui.space()
+                    ui.label(f"Modified by {project.modified_by}"
+                             f" at {project.modified_at}")
+            ui.separator()
 
     return None

@@ -87,6 +87,7 @@ class TicketPriorities:
 class TicketStatuses:
     """Constants for accepted ticket statuses"""
     OPEN = "Open"
+    NOT_STARTED = "Not Started"
     IN_PROGRESS = "In Progress"
     RESOLVED = "Resolved"
     CLOSED = "Closed"
@@ -203,7 +204,7 @@ UI_ROUTES = {
     UIPages.REGISTER: "/register",
     UIPages.PROJECTS: "/projects",
     UIPages.PROJECT: "/projects/{project_id}",
-    UIPages.TICKET: "/projects/{project_id}/tickets/{ticket_id}",
+    UIPages.TICKET: "/tickets/{ticket_id}",
     UIPages.PROFILE: "/profile",
     UIPages.NOT_FOUND: "/404"
 }
