@@ -75,6 +75,13 @@ class TicketTypes:
     TASK = "Task"
     BUG = "Bug"
 
+TICKET_TYPES = [
+    TicketTypes.EPIC,
+    TicketTypes.STORY,
+    TicketTypes.TASK,
+    TicketTypes.BUG
+]
+
 
 class TicketPriorities:
     """Constants for accepted ticket priorities"""
@@ -83,14 +90,25 @@ class TicketPriorities:
     HIGH = "High"
     CRITICAL = "Critical"
 
+TICKET_PRIORITIES = [
+    TicketPriorities.LOW,
+    TicketPriorities.NORMAL,
+    TicketPriorities.HIGH,
+    TicketPriorities.CRITICAL
+]
+
 
 class TicketStatuses:
     """Constants for accepted ticket statuses"""
-    OPEN = "Open"
     NOT_STARTED = "Not Started"
     IN_PROGRESS = "In Progress"
-    RESOLVED = "Resolved"
     CLOSED = "Closed"
+
+TICKET_STATUSES = [
+    TicketStatuses.NOT_STARTED,
+    TicketStatuses.IN_PROGRESS,
+    TicketStatuses.CLOSED
+]
 
 
 class APIOperations:

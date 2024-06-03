@@ -1,4 +1,5 @@
 """Page helpers for the TaskPilot application"""
+import time
 import requests
 from nicegui import app, ui
 
@@ -322,6 +323,8 @@ def projects() -> None:
                 color="positive" if create_project_response.json().get(
                     "result", False) else "negative"
             )
+            time.sleep(1)
+            ui.navigate.reload()
 
         with ui.row().classes("items-center justify-between"):  # Add this line
             ui.button("Create").on(
@@ -406,8 +409,92 @@ def projects() -> None:
 @apply_header
 def tickets() -> None:
     """Tickets page for the TaskPilot application"""
-    ui.label("Tickets").classes("text-5xl items-center justify-between w-full"
-                                " self-center px-6 py-2")
+    with ui.dialog() as dialog, ui.card().classes("w-full h-1/2 items-center"):
+        ui.label("Create Ticket").classes("text-2xl")
+        ticket_id = ui.input("Ticket ID").classes("w-4/5")
+        title = ui.input("Title").classes("w-4/5")
+        description = ui.textarea("Description").classes("w-4/5")
+        ticket_type = ui.select(config_info.TICKET_TYPES,
+                                label="Type").classes("w-4/5")
+        priority = ui.select(config_info.TICKET_PRIORITIES,
+                             label="Priority").classes("w-4/5")
+
+        get_user_projects_url = (
+            config_info.API_URL
+            + "/"
+            + config_info.API_ROUTES[APIOps.USERS_ALL_PROJECTS].format(
+                user_id=app.storage.user.get("username", "")
+            )
+        )
+        user_projects = requests.get(get_user_projects_url).json()["projects"]
+        user_project_ids = [project["project_id"] for project in user_projects]
+
+        parent_project = ui.select(
+            user_project_ids,
+            label="Parent Project"
+        ).classes("w-4/5")
+
+        def create_button_clicked():
+            if not parent_project.value:
+                ui.notify("Please select a parent project", color="negative")
+                return
+
+            create_ticket_request = api_req.CreateTicketRequest(
+                ticket_id=ticket_id.value,
+                title=title.value,
+                description=description.value,
+                type=ticket_type.value,
+                priority=priority.value,
+                status=config_info.TicketStatuses.NOT_STARTED,
+                created_by=app.storage.user.get("username", ""),
+                parent_project=parent_project.value
+            )
+            url = (
+                f"{config_info.API_URL}"
+                f"/{config_info.API_ROUTES[APIOps.TICKETS_CREATE]}"
+            )
+            create_ticket_response = requests.post(
+                url=url,
+                json=create_ticket_request.dict()
+            )
+            ui.notify(
+                create_ticket_response.json().get(
+                    "message", "Unable to create ticket"
+                ),
+                color="positive" if create_ticket_response.json().get(
+                    "result", False) else "negative"
+            )
+            dialog.close()
+            time.sleep(1)
+            ui.navigate.reload()
+
+        with ui.row().classes("items-center justify-between"):
+            ui.button("Create").on(
+                "click",
+                create_button_clicked
+            ).classes("text-white mr-2")
+            ui.button("Cancel", color="negative").on(
+                "click",
+                dialog.close
+            ).classes("text-white")
+
+    def open_dialog():
+        # Clear the input fields
+        ticket_id.value = ""
+        title.value = ""
+        description.value = ""
+        ticket_type.value = config_info.TicketTypes.TASK
+        priority.value = config_info.TicketPriorities.NORMAL
+        parent_project.value = ""
+        dialog.open()
+
+    with ui.row().classes("items-center justify-between w-full self-center"
+                          " px-6 py-2"):
+        ui.label("Tickets").classes("text-5xl")
+        ui.button(
+            text="Create Ticket",
+            on_click=open_dialog
+        ).classes("text-white")
     ui.label(
         "Here is a list of all the tickets that you have access to:"
     ).classes("text-2xl items-center justify-between w-full self-center"

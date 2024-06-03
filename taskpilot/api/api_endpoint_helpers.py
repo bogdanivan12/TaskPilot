@@ -842,7 +842,10 @@ def create_ticket(
     if not ticket_req.ticket_id:
         ticket_req.ticket_id = str(uuid.uuid4())
     created_by = get_user(ticket_req.created_by).user
-    assignee = get_user(ticket_req.assignee).user
+    assignee = (
+        get_user(ticket_req.assignee).user
+        if ticket_req.assignee else None
+    )
     if (created_by is None
             or (assignee is None and ticket_req.assignee is not None)):
         response = api_resp.Response(
@@ -854,7 +857,10 @@ def create_ticket(
         logger.error(response.message)
         return response
 
-    parent_project = get_project(ticket_req.parent_project).project
+    parent_project = (
+        get_project(ticket_req.parent_project).project
+        if ticket_req.parent_project else None
+    )
     if parent_project is None:
         response = api_resp.Response(
             message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
@@ -865,16 +871,18 @@ def create_ticket(
         logger.error(response.message)
         return response
 
-    parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
-    if parent_ticket is None and ticket_req.parent_ticket is not None:
-        response = api_resp.Response(
-            message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
-                    f" due to non-existent parent ticket",
-            code=424,
-            result=False
-        )
-        logger.error(response.message)
-        return response
+    if ticket_req.parent_ticket:
+        parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
+        if parent_ticket is None and ticket_req.parent_ticket is not None:
+            response = api_resp.Response(
+                message=f"Failed to create ticket with id"
+                        f" '{ticket_req.ticket_id}'"
+                        f" due to non-existent parent ticket",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
 
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
     ticket_dict = ticket_req.dict()
