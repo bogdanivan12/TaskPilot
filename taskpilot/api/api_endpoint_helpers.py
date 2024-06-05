@@ -917,7 +917,8 @@ def update_ticket(
     Update a ticket
     """
     modified_by = get_user(ticket_req.modified_by).user
-    assignee = get_user(ticket_req.assignee).user
+    assignee = (get_user(ticket_req.assignee).user
+                if ticket_req.assignee else None)
     if (modified_by is None or
             (assignee is None and ticket_req.assignee is not None)):
         response = api_resp.Response(
