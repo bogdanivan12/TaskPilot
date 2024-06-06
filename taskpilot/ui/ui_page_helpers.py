@@ -68,10 +68,10 @@ def main_page() -> None:
                     ui.chip(
                         text=f"Parent Project: {ticket.parent_project}",
                         icon="arrow_right",
-                        on_click=lambda: ui.navigate.to(
+                        on_click=lambda t=ticket: ui.navigate.to(
                             config_info.UI_ROUTES[
                                 config_info.UIPages.PROJECT].format(
-                                project_id=ticket.parent_project
+                                project_id=t.parent_project
                             )
                         )
                     ).classes("text-white text-base")

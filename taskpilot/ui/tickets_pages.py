@@ -147,10 +147,10 @@ def tickets_page() -> None:
                     ui.chip(
                         text=ticket.ticket_id,
                         icon="arrow_right",
-                        on_click=lambda: ui.navigate.to(
+                        on_click=lambda t=ticket: ui.navigate.to(
                             config_info.UI_ROUTES[
                                 config_info.UIPages.TICKET].format(
-                                ticket_id=ticket.ticket_id
+                                ticket_id=t.ticket_id
                             )
                         )
                     ).classes("text-white text-base")
@@ -159,10 +159,10 @@ def tickets_page() -> None:
                     ui.chip(
                         text=f"Parent Project: {ticket.parent_project}",
                         icon="arrow_right",
-                        on_click=lambda: ui.navigate.to(
+                        on_click=lambda t=ticket: ui.navigate.to(
                             config_info.UI_ROUTES[
                                 config_info.UIPages.PROJECT].format(
-                                project_id=ticket.parent_project
+                                project_id=t.parent_project
                             )
                         )
                     ).classes("text-white text-base")
@@ -200,9 +200,96 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
         ui.label(ticket.title).classes("text-5xl")
         ui.space()
         with ui.button_group():
-            ui.button(f"Type: {ticket.type}")
-            ui.button(f"Priority: {ticket.priority}")
-            ui.button(f"Status: {ticket.status}")
+            with ui.dropdown_button(f"Type: {ticket.type}",
+                                    auto_close=True):
+                for ticket_type in config_info.TICKET_TYPES:
+                    ui.item(
+                        ticket_type,
+                        on_click=lambda e=ticket_type, t=ticket: (
+                            requests.put(
+                                config_info.API_URL
+                                + "/"
+                                + config_info.API_ROUTES[
+                                    APIOps.TICKETS_UPDATE].format(
+                                    ticket_id=ticket_id
+                                ),
+                                json=api_req.UpdateTicketRequest(
+                                    title=t.title,
+                                    description=t.description,
+                                    type=e,
+                                    priority=t.priority,
+                                    status=t.status,
+                                    assignee=t.assignee,
+                                    modified_by=app.storage.user.get(
+                                        "username", ""),
+                                    parent_project=t.parent_project,
+                                    parent_ticket=t.parent_ticket
+                                ).dict()
+                            ),
+                            time.sleep(1),
+                            ui.navigate.reload()
+                        )
+                    )
+            with ui.dropdown_button(f"Priority: {ticket.priority}",
+                                    auto_close=True):
+                for ticket_priority in config_info.TICKET_PRIORITIES:
+                    ui.item(
+                        ticket_priority,
+                        on_click=lambda e=ticket_priority, t=ticket: (
+                            requests.put(
+                                config_info.API_URL
+                                + "/"
+                                + config_info.API_ROUTES[
+                                    APIOps.TICKETS_UPDATE].format(
+                                    ticket_id=ticket_id
+                                ),
+                                json=api_req.UpdateTicketRequest(
+                                    title=t.title,
+                                    description=t.description,
+                                    type=t.type,
+                                    priority=e,
+                                    status=t.status,
+                                    assignee=t.assignee,
+                                    modified_by=app.storage.user.get(
+                                        "username", ""),
+                                    parent_project=t.parent_project,
+                                    parent_ticket=t.parent_ticket
+                                ).dict()
+                            ),
+                            time.sleep(1),
+                            ui.navigate.reload()
+                        )
+                    )
+            with ui.dropdown_button(f"Status: {ticket.status}",
+                                    auto_close=True):
+                for ticket_status in config_info.TICKET_STATUSES:
+                    ui.item(
+                        ticket_status,
+                        on_click=lambda e=ticket_status, t=ticket: (
+                            requests.put(
+                                config_info.API_URL
+                                + "/"
+                                + config_info.API_ROUTES[
+                                    APIOps.TICKETS_UPDATE].format(
+                                    ticket_id=ticket_id
+                                ),
+                                json=api_req.UpdateTicketRequest(
+                                    title=t.title,
+                                    description=t.description,
+                                    type=t.type,
+                                    priority=t.priority,
+                                    status=e,
+                                    assignee=t.assignee,
+                                    modified_by=app.storage.user.get(
+                                        "username", ""),
+                                    parent_project=t.parent_project,
+                                    parent_ticket=t.parent_ticket
+                                ).dict()
+                            ),
+                            time.sleep(1),
+                            ui.navigate.reload()
+                        )
+                    )
 
     with ui.row().classes("items-center justify-between w-full self-center"
                           " px-6 py-2"):
@@ -245,10 +332,10 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
         ui.chip(
             text=f"Parent Project: {ticket.parent_project}",
             icon="arrow_right",
-            on_click=lambda: ui.navigate.to(
+            on_click=lambda t=ticket: ui.navigate.to(
                 config_info.UI_ROUTES[
                     config_info.UIPages.PROJECT].format(
-                    project_id=ticket.parent_project
+                    project_id=t.parent_project
                 )
             )
         ).classes("text-white text-base")
@@ -256,10 +343,10 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
             ui.chip(
                 text=f"Parent Ticket: {ticket.parent_ticket}",
                 icon="arrow_right",
-                on_click=lambda: ui.navigate.to(
+                on_click=lambda t=ticket: ui.navigate.to(
                     config_info.UI_ROUTES[
                         config_info.UIPages.TICKET].format(
-                        ticket_id=ticket.parent_ticket
+                        ticket_id=t.parent_ticket
                     )
                 )
             ).classes("text-white text-base")
