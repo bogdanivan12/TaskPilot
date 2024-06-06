@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: taskpilot-elastic
+  namespace: default
+spec:
+  serviceName: "elasticsearch"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taskpilot-elastic
+  template:
+    metadata:
+      labels:
+        app: taskpilot-elastic
+    spec:
+      containers:
+      - name: taskpilot-elastic
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        ports:
+        - containerPort: 9200
+          name: http
+        - containerPort: 9300
+          name: transport
+        env:
+        - name: discovery.type
+          value: "single-node"
+        volumeMounts:
+        - name: taskpilot-elastic-data
+          mountPath: /usr/share/elasticsearch/data
+  volumeClaimTemplates:
+  - metadata:
+      name: taskpilot-elastic-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: taskpilot-elastic
+  namespace: default
+  labels:
+    app: taskpilot-elastic
+spec:
+  type: NodePort
+  ports:
+  - port: 9200
+    name: http
+    nodePort: 30092
+  - port: 9300
+    name: transport
+  selector:
+    app: taskpilot-elastic
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: taskpilot-elastic-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: taskpilot-elastic
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector: {}
+  egress:
+  - to:
+    - podSelector: {}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: taskpilot-elastic-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host: localhost
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: taskpilot-elastic
+            port:
+              number: 9200
+  tls:
+  - hosts:
+    - localhost

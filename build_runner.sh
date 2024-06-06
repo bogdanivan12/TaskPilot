@@ -10,9 +10,9 @@ start_service () {
   docker stop taskpilot-"$1" && docker rm taskpilot-"$1"
   docker rmi taskpilot-"$1"
 
-  docker build -f taskpilot/"$1"/Dockerfile_"$1" -t taskpilot-"$1" .
+  docker build -f taskpilot/"$1"/Dockerfile_"$1" -t bogdanivan12/taskpilot-"$1":latest .
 
-  docker run --net taskpilot -p "$2":"$2" --name taskpilot-"$1" taskpilot-"$1" &
+  docker run --net taskpilot -p "$2":"$2" --name taskpilot-"$1" bogdanivan12/taskpilot-"$1":latest &
 }
 
 start_service api 8080
