@@ -172,8 +172,8 @@ def project_page(project_id: str) -> None:
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
         ticket_id = ui.input("Ticket ID").classes("w-4/5")
-        title = ui.input("Title").classes("w-4/5")
-        description = ui.textarea("Description").classes("w-4/5")
+        ticket_title = ui.input("Title").classes("w-4/5")
+        ticket_description = ui.textarea("Description").classes("w-4/5")
         ticket_type = ui.select(config_info.TICKET_TYPES,
                                 label="Type").classes("w-4/5")
         priority = ui.select(config_info.TICKET_PRIORITIES,
@@ -188,8 +188,8 @@ def project_page(project_id: str) -> None:
         def create_button_clicked():
             create_ticket_request = api_req.CreateTicketRequest(
                 ticket_id=ticket_id.value,
-                title=title.value,
-                description=description.value,
+                title=ticket_title.value,
+                description=ticket_description.value,
                 type=ticket_type.value,
                 priority=priority.value,
                 status=config_info.TicketStatuses.NOT_STARTED,
@@ -228,8 +228,8 @@ def project_page(project_id: str) -> None:
     def open_dialog():
         # Clear the input fields
         ticket_id.value = ""
-        title.value = ""
-        description.value = ""
+        ticket_title.value = ""
+        ticket_description.value = ""
         ticket_type.value = config_info.TicketTypes.TASK
         priority.value = config_info.TicketPriorities.NORMAL
         parent_project.value = project.project_id
