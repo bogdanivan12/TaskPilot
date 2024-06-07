@@ -62,7 +62,6 @@ def login_page() -> None:
             ),
             icon="arrow_right"
         ).props("flat color=white").classes("place-self-center")
-    return None
 
 
 def register_page() -> None:

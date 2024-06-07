@@ -29,6 +29,7 @@ class Ticket(BaseModel):
     modified_at: str
     parent_project: str
     parent_ticket: Optional[str] = None
+    next_comment_id: int = 0
 
 
 class Comment(BaseModel):
@@ -50,3 +51,4 @@ class Project(BaseModel):
     modified_by: str
     modified_at: str
     members: List[str] = []
+    next_ticket_id: int = 0
