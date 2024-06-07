@@ -809,6 +809,102 @@ def remove_member_from_project(project_id: str,
     return response
 
 
+def is_user_owner_of_project(project_id: str,
+                             user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a project
+    """
+    project = get_project(project_id).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if project.created_by == user_id or user.is_admin:
+        response = api_resp.Response(
+            message=f"User with id '{user_id}' is the owner of project with"
+                    f" id '{project_id}'",
+            result=True
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user_id}' is not the owner of project with"
+                f" id '{project_id}'",
+        result=False
+    )
+    logger.info(response.message)
+    return response
+
+
+def is_user_member_of_project(project_id: str,
+                              user_id: str) -> api_resp.Response:
+    """
+    Check if a user is a member of a project
+    """
+    project = get_project(project_id).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is member of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is member of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if (user_id in project.members
+            or project.created_by == user_id
+            or user.is_admin):
+        response = api_resp.Response(
+            message=f"User with id '{user_id}' is a member of project with"
+                    f" id '{project_id}'",
+            result=True
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user_id}' is not a member of project with"
+                f" id '{project_id}'",
+        result=False
+    )
+    logger.info(response.message)
+    return response
+
+
 def get_ticket(ticket_id: str) -> api_resp.GetTicketResponse:
     """
     Get a ticket by id

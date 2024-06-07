@@ -154,8 +154,21 @@ def projects_page() -> None:
     return None
 
 
-def project_page(project_id: str) -> None:  # TODO Edit Project
+def project_page(project_id: str) -> None:
     """Project page for the TaskPilot application"""
+    is_user_member_of_project = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.PROJECTS_IS_USER_MEMBER].format(
+            project_id=project_id,
+            user_id=app.storage.user.get("username", "")
+        )
+    ).json()["result"]
+    if not is_user_member_of_project:
+        ui.navigate.to(
+            config_info.UI_ROUTES[config_info.UIPages.PROJECTS]
+        )
+
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
         ticket_id = ui.input("Ticket ID").classes("w-4/5")
@@ -222,6 +235,136 @@ def project_page(project_id: str) -> None:  # TODO Edit Project
         parent_project.value = project.project_id
         dialog.open()
 
+    project = models.Project.parse_obj(
+        requests.get(
+            config_info.API_URL
+            + "/"
+            + config_info.API_ROUTES[APIOps.PROJECTS_GET].format(
+                project_id=project_id
+            )
+        ).json()["project"]
+    )
+
+    with ui.dialog() as edit_dialog, ui.card().classes("w-full items-center"):
+        ui.label("Edit Project").classes("text-2xl")
+        title = ui.input("Title", value=project.title).classes("w-4/5")
+        description = ui.textarea("Description",
+                                  value=project.description).classes("w-4/5")
+
+        all_users = requests.get(
+            f"{config_info.API_URL}"
+            f"/{config_info.API_ROUTES[APIOps.USERS_ALL]}"
+        ).json()["users"]
+        all_user_ids = [user["username"] for user in all_users]
+        all_user_ids.remove(app.storage.user.get("username", ""))
+
+        # Create a dictionary to store the checkboxes
+        checkboxes = {}
+
+        with ui.expansion("Members", icon="people").classes(
+                "w-4/5") as all_users_expansion:
+            search_member = ui.input(
+                label="Search Member",
+                on_change=lambda: [
+                    checkbox.set_visibility(
+                        search_member.value.lower() in user_id.lower()
+                        or not search_member
+                    )
+                    for user_id, checkbox in checkboxes.items()
+                ]
+            ).classes("w-full")
+            for user_id in all_user_ids:
+                checkboxes[user_id] = ui.checkbox(
+                    user_id,
+                    value=user_id in project.members
+                ).classes("w-full")
+
+        def edit_button_clicked():
+            selected_user_ids = [
+                user_id for user_id, checkbox in checkboxes.items()
+                if checkbox.value
+            ] + [app.storage.user.get("username", "")]
+            edit_dialog.close()
+            edit_project_request = api_req.UpdateProjectRequest(
+                title=title.value,
+                description=description.value,
+                modified_by=app.storage.user.get("username", ""),
+                members=selected_user_ids
+            )
+            url = (
+                config_info.API_URL
+                + "/"
+                + config_info.API_ROUTES[APIOps.PROJECTS_UPDATE].format(
+                    project_id=project_id
+                )
+            )
+            edit_project_response = requests.put(
+                url=url,
+                json=edit_project_request.dict()
+            )
+            ui.notify(
+                edit_project_response.json().get(
+                    "message", "Unable to edit project"
+                ),
+                color="positive" if edit_project_response.json().get(
+                    "result", False) else "negative"
+            )
+            time.sleep(1)
+            ui.navigate.reload()
+
+        with ui.row().classes("items-center justify-between"):
+            ui.button(
+                "Modify",
+                on_click=edit_button_clicked,
+                color="warning"
+            ).classes("text-white mr-2")
+            ui.button(
+                "Cancel",
+                on_click=edit_dialog.close
+            ).classes("text-white")
+
+    with ui.dialog() as delete_dialog, ui.card().classes(
+            "w-full items-center"):
+        ui.label("Delete Project").classes("text-2xl")
+        ui.label(
+            "Are you sure you want to delete this project?"
+        ).classes("text-lg")
+        ui.label(
+            "This action cannot be undone."
+        ).classes("text-lg")
+
+        def delete_button_clicked():
+            delete_dialog.close()
+            delete_project_response = requests.delete(
+                config_info.API_URL
+                + "/"
+                + config_info.API_ROUTES[APIOps.PROJECTS_DELETE].format(
+                    project_id=project_id
+                )
+            )
+            ui.notify(
+                delete_project_response.json().get(
+                    "message", "Unable to delete project"
+                ),
+                color="positive" if delete_project_response.json().get(
+                    "result", False) else "negative"
+            )
+            time.sleep(1)
+            ui.navigate.to(
+                config_info.UI_ROUTES[config_info.UIPages.PROJECTS]
+            )
+
+        with ui.row().classes("items-center justify-between"):
+            ui.button(
+                "Delete",
+                on_click=delete_button_clicked,
+                color="negative"
+            ).classes("text-white mr-2")
+            ui.button(
+                "Cancel",
+                on_click=delete_dialog.close
+            ).classes("text-white")
+
     get_project_url = (
         config_info.API_URL
         + "/"
@@ -251,6 +394,31 @@ def project_page(project_id: str) -> None:  # TODO Edit Project
         f"Members: {', '.join(project.members)}"
     ).classes("text-xl items-center justify-between w-full self-center"
               " px-6 py-2")
+
+    is_user_owner_of_project = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.PROJECTS_IS_USER_OWNER].format(
+            project_id=project_id,
+            user_id=app.storage.user.get("username", "")
+        )
+    ).json()["result"]
+    if is_user_owner_of_project:
+        with ui.row().classes("items-center justify-between w-full self-center"
+                              " px-6 py-2"):
+            ui.space()
+            ui.chip(
+                "Modify Project",
+                on_click=edit_dialog.open,
+                icon="edit",
+                color="warning"
+            ).classes("text-white text-base")
+            ui.chip(
+                "Delete Ticket",
+                on_click=delete_dialog.open,
+                icon="delete",
+                color="negative"
+            ).classes("text-white text-base")
 
     with ui.row().classes("items-center justify-between w-full self-center"
                           " px-6 py-2"):

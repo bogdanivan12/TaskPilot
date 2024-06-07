@@ -264,6 +264,30 @@ async def remove_member_from_project(project_id: str,
     return response
 
 
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.PROJECTS_IS_USER_OWNER],
+         tags=["Projects"])
+async def is_user_owner_of_project(project_id: str,
+                                   user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a project
+    """
+    response = api_help.is_user_owner_of_project(project_id, user_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.PROJECTS_IS_USER_MEMBER],
+         tags=["Projects"])
+async def is_user_member_of_project(project_id: str,
+                                    user_id: str) -> api_resp.Response:
+    """
+    Check if a user is a member of a project
+    """
+    response = api_help.is_user_member_of_project(project_id, user_id)
+    return response
+
+
 @app.get(config_info.API_ROUTES[config_info.APIOperations.TICKETS_GET],
          tags=["Tickets"])
 async def get_ticket(ticket_id: str) -> api_resp.GetTicketResponse:
@@ -440,7 +464,7 @@ async def is_user_owner_of_comment(comment_id: str,
     return response
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # TODO sortari
     uvicorn.run(
         app=config_info.API_APP,
         host=config_info.HOST,

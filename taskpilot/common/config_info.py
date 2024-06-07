@@ -136,6 +136,8 @@ class APIOperations:
     PROJECTS_ALL_TICKETS = "projects_all_tickets"
     PROJECTS_ADD_MEMBER = "projects_add_member"
     PROJECTS_REMOVE_MEMBER = "projects_remove_member"
+    PROJECTS_IS_USER_OWNER = "projects_is_user_owner"
+    PROJECTS_IS_USER_MEMBER = "projects_is_user_member"
 
     TICKETS_GET = "tickets_get"
     TICKETS_CREATE = "tickets_create"
@@ -187,6 +189,10 @@ API_ROUTES = {
                                        "/{user_id}",
     APIOperations.PROJECTS_REMOVE_MEMBER: "/api/projects/{project_id}/members"
                                           "/{user_id}",
+    APIOperations.PROJECTS_IS_USER_OWNER: "/api/projects/{project_id}/owners"
+                                          "/{user_id}",
+    APIOperations.PROJECTS_IS_USER_MEMBER: "/api/projects/{project_id}/members"
+                                           "/{user_id}",
 
     APIOperations.TICKETS_GET: "/api/tickets/{ticket_id}",
     APIOperations.TICKETS_CREATE: "/api/tickets",
@@ -198,7 +204,7 @@ API_ROUTES = {
     APIOperations.TICKETS_ALL_CHILDREN: "/api/tickets/{ticket_id}"
                                         "/children-tickets",
     APIOperations.TICKETS_CHANGE_STATUS: "/api/tickets/{ticket_id}/status",
-    APIOperations.TICKETS_IS_USER_OWNER: "/api/tickets/{ticket_id}/owner"
+    APIOperations.TICKETS_IS_USER_OWNER: "/api/tickets/{ticket_id}/owners"
                                          "/{user_id}",
 
     APIOperations.COMMENTS_GET: "/api/comments/{comment_id}",
@@ -206,7 +212,7 @@ API_ROUTES = {
     APIOperations.COMMENTS_DELETE: "/api/comments/{comment_id}",
     APIOperations.COMMENTS_ALL: "/api/comments",
     APIOperations.COMMENTS_SEARCH: "/api/comments/search",
-    APIOperations.COMMENTS_IS_USER_OWNER: "/api/comments/{comment_id}/owner"
+    APIOperations.COMMENTS_IS_USER_OWNER: "/api/comments/{comment_id}/owners"
                                           "/{user_id}"
 }
 

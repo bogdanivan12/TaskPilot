@@ -196,6 +196,19 @@ def ticket_page(ticket_id: str) -> None:
     ticket_response = requests.get(get_ticket_url).json()
     ticket = models.Ticket.parse_obj(ticket_response["ticket"])
 
+    is_user_member_of_project = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.PROJECTS_IS_USER_MEMBER].format(
+            project_id=ticket.parent_project,
+            user_id=app.storage.user.get("username", "")
+        )
+    ).json()["result"]
+    if not is_user_member_of_project:
+        ui.navigate.to(
+            config_info.UI_ROUTES[config_info.UIPages.PROJECTS]
+        )
+
     is_user_owner_of_ticket = requests.get(
         config_info.API_URL
         + "/"
