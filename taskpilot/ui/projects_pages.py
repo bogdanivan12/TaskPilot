@@ -10,7 +10,7 @@ from taskpilot.common.config_info import APIOperations as APIOps
 
 def projects_page() -> None:
     """Projects page for the TaskPilot application"""
-    with ui.dialog() as dialog, ui.card().classes("w-full h-1/2 items-center"):
+    with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Project").classes("text-2xl")
         project_id = ui.input("Project ID").classes("w-4/5")
         title = ui.input("Title").classes("w-4/5")
@@ -156,7 +156,7 @@ def projects_page() -> None:
 
 def project_page(project_id: str) -> None:
     """Project page for the TaskPilot application"""
-    with ui.dialog() as dialog, ui.card().classes("w-full h-1/2 items-center"):
+    with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
         ticket_id = ui.input("Ticket ID").classes("w-4/5")
         title = ui.input("Title").classes("w-4/5")

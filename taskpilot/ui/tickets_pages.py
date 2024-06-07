@@ -1,3 +1,4 @@
+import datetime
 import time
 
 import requests
@@ -10,7 +11,7 @@ from taskpilot.common.config_info import APIOperations as APIOps
 
 def tickets_page() -> None:
     """Tickets page for the TaskPilot application"""
-    with ui.dialog() as dialog, ui.card().classes("w-full h-1/2 items-center"):
+    with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
         ticket_id = ui.input("Ticket ID").classes("w-4/5")
         title = ui.input("Title").classes("w-4/5")
@@ -141,6 +142,9 @@ def tickets_page() -> None:
             ui.label("No tickets").classes("text-2xl")
             return
 
+        user_tickets.sort(key=lambda ticket: datetime.datetime.strptime(
+            ticket.modified_at, "%d-%m-%Y %H:%M:%S"), reverse=True)
+
         for ticket in user_tickets:
             with ui.card().classes("w-full"):
                 with ui.row().classes("items-center justify-between w-full"):
@@ -180,7 +184,7 @@ def tickets_page() -> None:
                              f" at {ticket.modified_at}")
 
 
-def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
+def ticket_page(ticket_id: str) -> None:
     """Ticket page for the TaskPilot application"""
     get_ticket_url = (
         config_info.API_URL
@@ -192,6 +196,93 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
     ticket_response = requests.get(get_ticket_url).json()
     ticket = models.Ticket.parse_obj(ticket_response["ticket"])
 
+    is_user_owner_of_ticket = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.TICKETS_IS_USER_OWNER].format(
+            ticket_id=ticket_id,
+            user_id=app.storage.user.get("username", "")
+        )
+    ).json()["result"]
+
+    with ui.dialog() as modify_ticket_dialog, ui.card().classes(
+            "w-full items-center"):
+        ui.label("Modify Ticket").classes("text-2xl")
+        title = ui.input("Title", value=ticket.title).classes("w-4/5")
+        description = ui.textarea("Description",
+                                    value=ticket.description).classes("w-4/5")
+        parent_ticket = ui.select(
+            label="Parent Ticket",
+            options=["None"] + [ticket["ticket_id"]
+             for ticket in requests.get(
+                config_info.API_URL
+                + "/"
+                + config_info.API_ROUTES[APIOps.PROJECTS_ALL_TICKETS].format(
+                    project_id=ticket.parent_project
+                )
+            ).json()["tickets"]],
+            value=ticket.parent_ticket if ticket.parent_ticket else "None"
+        ).classes("w-4/5")
+        with ui.row().classes("items-center justify-between"):
+            ui.button(
+                "Modify",
+                color="warning",
+                on_click=lambda: (
+                    requests.put(
+                        config_info.API_URL
+                        + "/"
+                        + config_info.API_ROUTES[APIOps.TICKETS_UPDATE].format(
+                            ticket_id=ticket_id
+                        ),
+                        json=api_req.UpdateTicketRequest(
+                            title=title.value,
+                            description=description.value,
+                            type=ticket.type,
+                            priority=ticket.priority,
+                            status=ticket.status,
+                            assignee=ticket.assignee,
+                            modified_by=app.storage.user.get("username", ""),
+                            parent_project=ticket.parent_project,
+                            parent_ticket=(parent_ticket.value
+                                           if parent_ticket.value != "None"
+                                           else None)
+                        ).dict()
+                    ),
+                    modify_ticket_dialog.close(),
+                    time.sleep(1),
+                    ui.navigate.reload()
+                )
+            ).classes("text-white mr-2")
+            ui.button("Cancel", on_click=modify_ticket_dialog.close
+                      ).classes("text-white")
+
+    with ui.dialog() as delete_ticket_dialog, ui.card().classes(
+            "w-full items-center"):
+        ui.label("Delete Ticket").classes("text-2xl")
+        ui.label("Are you sure you want to delete this ticket?").classes(
+            "text-lg")
+        with ui.row().classes("items-center justify-between"):
+            ui.button(
+                "Delete",
+                color="negative",
+                on_click=lambda: (
+                    requests.delete(
+                        config_info.API_URL
+                        + "/"
+                        + config_info.API_ROUTES[APIOps.TICKETS_DELETE].format(
+                            ticket_id=ticket_id
+                        )
+                    ),
+                    delete_ticket_dialog.close(),
+                    time.sleep(1),
+                    ui.navigate.to(
+                        config_info.UI_ROUTES[config_info.UIPages.TICKETS]
+                    )
+                )
+            ).classes("text-white mr-2")
+            ui.button("Cancel", on_click=delete_ticket_dialog.close
+                      ).classes("text-white")
+
     with ui.row().classes("items-center justify-between w-full self-center"
                           " px-6 py-2"):
         ui.chip(
@@ -200,96 +291,104 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
         ui.label(ticket.title).classes("text-5xl")
         ui.space()
         with ui.button_group():
-            with ui.dropdown_button(f"Type: {ticket.type}",
-                                    auto_close=True):
-                for ticket_type in config_info.TICKET_TYPES:
-                    ui.item(
-                        ticket_type,
-                        on_click=lambda e=ticket_type, t=ticket: (
-                            requests.put(
-                                config_info.API_URL
-                                + "/"
-                                + config_info.API_ROUTES[
-                                    APIOps.TICKETS_UPDATE].format(
-                                    ticket_id=ticket_id
+            if is_user_owner_of_ticket:
+                with ui.dropdown_button(f"Type: {ticket.type}",
+                                        auto_close=True):
+                    for ticket_type in config_info.TICKET_TYPES:
+                        ui.item(
+                            ticket_type,
+                            on_click=lambda e=ticket_type, t=ticket: (
+                                requests.put(
+                                    config_info.API_URL
+                                    + "/"
+                                    + config_info.API_ROUTES[
+                                        APIOps.TICKETS_UPDATE].format(
+                                        ticket_id=ticket_id
+                                    ),
+                                    json=api_req.UpdateTicketRequest(
+                                        title=t.title,
+                                        description=t.description,
+                                        type=e,
+                                        priority=t.priority,
+                                        status=t.status,
+                                        assignee=t.assignee,
+                                        modified_by=app.storage.user.get(
+                                            "username", ""),
+                                        parent_project=t.parent_project,
+                                        parent_ticket=t.parent_ticket
+                                    ).dict()
                                 ),
-                                json=api_req.UpdateTicketRequest(
-                                    title=t.title,
-                                    description=t.description,
-                                    type=e,
-                                    priority=t.priority,
-                                    status=t.status,
-                                    assignee=t.assignee,
-                                    modified_by=app.storage.user.get(
-                                        "username", ""),
-                                    parent_project=t.parent_project,
-                                    parent_ticket=t.parent_ticket
-                                ).dict()
-                            ),
-                            time.sleep(1),
-                            ui.navigate.reload()
+                                time.sleep(1),
+                                ui.navigate.reload()
+                            )
                         )
-                    )
-            with ui.dropdown_button(f"Priority: {ticket.priority}",
-                                    auto_close=True):
-                for ticket_priority in config_info.TICKET_PRIORITIES:
-                    ui.item(
-                        ticket_priority,
-                        on_click=lambda e=ticket_priority, t=ticket: (
-                            requests.put(
-                                config_info.API_URL
-                                + "/"
-                                + config_info.API_ROUTES[
-                                    APIOps.TICKETS_UPDATE].format(
-                                    ticket_id=ticket_id
+                with ui.dropdown_button(f"Priority: {ticket.priority}",
+                                        auto_close=True):
+                    for ticket_priority in config_info.TICKET_PRIORITIES:
+                        ui.item(
+                            ticket_priority,
+                            on_click=lambda e=ticket_priority, t=ticket: (
+                                requests.put(
+                                    config_info.API_URL
+                                    + "/"
+                                    + config_info.API_ROUTES[
+                                        APIOps.TICKETS_UPDATE].format(
+                                        ticket_id=ticket_id
+                                    ),
+                                    json=api_req.UpdateTicketRequest(
+                                        title=t.title,
+                                        description=t.description,
+                                        type=t.type,
+                                        priority=e,
+                                        status=t.status,
+                                        assignee=t.assignee,
+                                        modified_by=app.storage.user.get(
+                                            "username", ""),
+                                        parent_project=t.parent_project,
+                                        parent_ticket=t.parent_ticket
+                                    ).dict()
                                 ),
-                                json=api_req.UpdateTicketRequest(
-                                    title=t.title,
-                                    description=t.description,
-                                    type=t.type,
-                                    priority=e,
-                                    status=t.status,
-                                    assignee=t.assignee,
-                                    modified_by=app.storage.user.get(
-                                        "username", ""),
-                                    parent_project=t.parent_project,
-                                    parent_ticket=t.parent_ticket
-                                ).dict()
-                            ),
-                            time.sleep(1),
-                            ui.navigate.reload()
+                                time.sleep(1),
+                                ui.navigate.reload()
+                            )
                         )
-                    )
-            with ui.dropdown_button(f"Status: {ticket.status}",
-                                    auto_close=True):
-                for ticket_status in config_info.TICKET_STATUSES:
-                    ui.item(
-                        ticket_status,
-                        on_click=lambda e=ticket_status, t=ticket: (
-                            requests.put(
-                                config_info.API_URL
-                                + "/"
-                                + config_info.API_ROUTES[
-                                    APIOps.TICKETS_UPDATE].format(
-                                    ticket_id=ticket_id
+            else:
+                ui.button(f"Type: {ticket.type}")
+                ui.button(f"Priority: {ticket.priority}")
+            if (is_user_owner_of_ticket or
+                    ticket.assignee == app.storage.user.get("username", "")):
+                with ui.dropdown_button(f"Status: {ticket.status}",
+                                        auto_close=True):
+                    for ticket_status in config_info.TICKET_STATUSES:
+                        ui.item(
+                            ticket_status,
+                            on_click=lambda e=ticket_status, t=ticket: (
+                                requests.put(
+                                    config_info.API_URL
+                                    + "/"
+                                    + config_info.API_ROUTES[
+                                        APIOps.TICKETS_UPDATE].format(
+                                        ticket_id=ticket_id
+                                    ),
+                                    json=api_req.UpdateTicketRequest(
+                                        title=t.title,
+                                        description=t.description,
+                                        type=t.type,
+                                        priority=t.priority,
+                                        status=e,
+                                        assignee=t.assignee,
+                                        modified_by=app.storage.user.get(
+                                            "username", ""),
+                                        parent_project=t.parent_project,
+                                        parent_ticket=t.parent_ticket
+                                    ).dict()
                                 ),
-                                json=api_req.UpdateTicketRequest(
-                                    title=t.title,
-                                    description=t.description,
-                                    type=t.type,
-                                    priority=t.priority,
-                                    status=e,
-                                    assignee=t.assignee,
-                                    modified_by=app.storage.user.get(
-                                        "username", ""),
-                                    parent_project=t.parent_project,
-                                    parent_ticket=t.parent_ticket
-                                ).dict()
-                            ),
-                            time.sleep(1),
-                            ui.navigate.reload()
+                                time.sleep(1),
+                                ui.navigate.reload()
+                            )
                         )
-                    )
+            else:
+                ui.button(f"Status: {ticket.status}")
 
     with ui.row().classes("items-center justify-between w-full self-center"
                           " px-6 py-2"):
@@ -306,23 +405,29 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
         ui.select(
             label="Assignee",
             value=ticket.assignee if ticket.assignee else "Unassigned",
-            options=["Unassigned"] + parent_project.members,
-            on_change=lambda e: (requests.put(
+            options=(
+                ["Unassigned"] + parent_project.members
+                if is_user_owner_of_ticket
+                else list(
+                    {ticket.assignee, app.storage.user.get("username", "")}
+                )
+            ),
+            on_change=lambda e, t=ticket: (requests.put(
                 config_info.API_URL
                 + "/"
                 + config_info.API_ROUTES[APIOps.TICKETS_UPDATE].format(
                     ticket_id=ticket_id
                 ),
                 json=api_req.UpdateTicketRequest(
-                    title=ticket.title,
-                    description=ticket.description,
-                    type=ticket.type,
-                    priority=ticket.priority,
-                    status=ticket.status,
+                    title=t.title,
+                    description=t.description,
+                    type=t.type,
+                    priority=t.priority,
+                    status=t.status,
                     assignee=e.value if e.value != "Unassigned" else None,
                     modified_by=app.storage.user.get("username", ""),
-                    parent_project=ticket.parent_project,
-                    parent_ticket=ticket.parent_ticket
+                    parent_project=t.parent_project,
+                    parent_ticket=t.parent_ticket
                 ).dict()
             ), time.sleep(1), ui.navigate.reload())
         ).classes("text-lg w-1/6")
@@ -351,18 +456,19 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
                 )
             ).classes("text-white text-base")
         ui.space()
-        ui.chip(
-            text="Modify Ticket",
-            icon="edit",
-            color="warning",
-            on_click=lambda: None
-        ).classes("text-white text-base")
-        ui.chip(
-            text="Delete Ticket",
-            icon="delete",
-            color="negative",
-            on_click=lambda: None
-        ).classes("text-white text-base")
+        if is_user_owner_of_ticket:
+            ui.chip(
+                text="Modify Ticket",
+                icon="edit",
+                color="warning",
+                on_click=modify_ticket_dialog.open
+            ).classes("text-white text-base")
+            ui.chip(
+                text="Delete Ticket",
+                icon="delete",
+                color="negative",
+                on_click=delete_ticket_dialog.open
+            ).classes("text-white text-base")
 
     ui.separator()
     with ui.row().classes("items-center justify-between w-full"):
@@ -454,7 +560,7 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
     ]
 
     if not ticket_comments:
-        ui.label("No comments").classes("text-2xl")
+        ui.label("No comments").classes("text-2xl self-center")
         return
 
     for comment in ticket_comments:
@@ -462,4 +568,4 @@ def ticket_page(ticket_id: str) -> None:  # TODO Functionalities for buttons
             comment.text,
             name=comment.created_by,
             stamp=comment.created_at
-        ).classes("w-full self-center px-6 py-2").props("color: blue;")
+        ).classes("w-full self-center px-6 py-2")

@@ -364,6 +364,18 @@ async def change_ticket_status(ticket_id: str,
     return response
 
 
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.TICKETS_IS_USER_OWNER],
+         tags=["Tickets"])
+async def is_user_owner_of_ticket(ticket_id: str,
+                                  user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a ticket
+    """
+    response = api_help.is_user_owner_of_ticket(ticket_id, user_id)
+    return response
+
+
 @app.get(config_info.API_ROUTES[config_info.APIOperations.COMMENTS_GET],
          tags=["Comments"])
 async def get_comment(comment_id: str) -> api_resp.GetCommentResponse:

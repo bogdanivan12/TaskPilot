@@ -1190,6 +1190,66 @@ def get_comment(comment_id: str) -> api_resp.GetCommentResponse:
     return response
 
 
+def is_user_owner_of_ticket(ticket_id: str,
+                            user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a ticket
+    """
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" ticket with id '{ticket_id}' due to non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    ticket = get_ticket(ticket_id).ticket
+    if ticket is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" ticket with id '{ticket_id}' due to non-existent"
+                    f" ticket",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    project = get_project(ticket.parent_project).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" ticket with id '{ticket_id}' due to non-existent"
+                    f" parent project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if (user.username == ticket.created_by
+            or user.username == project.created_by
+            or user.is_admin
+            or is_user_owner_of_ticket(ticket.parent_ticket, user_id).result):
+        response = api_resp.Response(
+            message=f"User with id '{user.username}' is the owner of ticket"
+                    f" with id '{ticket_id}'"
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user.username}' is not the owner of ticket"
+                f" with id '{ticket_id}'",
+        result=False
+    )
+    logger.info(response.message)
+    return response
+
+
 def create_comment(
         comment_req: api_req.CreateCommentRequest) -> api_resp.Response:
     """

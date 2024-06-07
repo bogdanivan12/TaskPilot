@@ -146,6 +146,7 @@ class APIOperations:
     TICKETS_ALL_COMMENTS = "tickets_all_comments"
     TICKETS_ALL_CHILDREN = "tickets_all_children"
     TICKETS_CHANGE_STATUS = "tickets_change_status"
+    TICKETS_IS_USER_OWNER = "tickets_is_user_owner"
 
     COMMENTS_GET = "comments_get"
     COMMENTS_CREATE = "comments_create"
@@ -196,6 +197,8 @@ API_ROUTES = {
     APIOperations.TICKETS_ALL_CHILDREN: "/api/tickets/{ticket_id}"
                                         "/children-tickets",
     APIOperations.TICKETS_CHANGE_STATUS: "/api/tickets/{ticket_id}/status",
+    APIOperations.TICKETS_IS_USER_OWNER: "/api/tickets/{ticket_id}/owner"
+                                         "/{user_id}",
 
     APIOperations.COMMENTS_GET: "/api/comments/{comment_id}",
     APIOperations.COMMENTS_CREATE: "/api/comments",
