@@ -1,8 +1,7 @@
+"""Populate the database with dummy data"""
 import requests
 
-from taskpilot.api import api_request_classes as api_req
-from taskpilot.common import config_info
-
+from taskpilot.common import config_info, api_request_classes as api_req
 
 CREATE_USER_REQUESTS = [
     api_req.CreateUserRequest(

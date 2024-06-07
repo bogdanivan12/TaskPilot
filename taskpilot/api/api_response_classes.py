@@ -2,7 +2,7 @@
 from typing import List, Optional
 from pydantic import BaseModel
 
-from taskpilot.api import api_models as models
+from taskpilot.common import models
 
 
 class Response(BaseModel):

@@ -21,7 +21,6 @@ class UpdateUserRequest(BaseModel):
     is_admin: bool = False
     disabled: bool = False
     favorite_tickets: List[str] = []
-    member_of: List[str] = []
 
 
 class SearchUsersRequest(BaseModel):
@@ -31,6 +30,12 @@ class SearchUsersRequest(BaseModel):
     full_name: Optional[str] = None
     is_admin: Optional[bool] = None
     disabled: Optional[bool] = None
+
+
+class LoginRequest(BaseModel):
+    """Login request model"""
+    username: str
+    password: str
 
 
 class CreateProjectRequest(BaseModel):
@@ -102,7 +107,7 @@ class SearchTicketsRequest(BaseModel):
 
 class CreateCommentRequest(BaseModel):
     """Create comment request model"""
-    comment_id: str
+    comment_id: Optional[str] = None
     ticket_id: str
     text: str
     created_by: str

@@ -4,8 +4,7 @@ import uvicorn
 
 from fastapi.responses import RedirectResponse
 
-from taskpilot.common import config_info
-from taskpilot.api import api_request_classes as api_req
+from taskpilot.common import config_info, api_request_classes as api_req
 from taskpilot.api import api_endpoint_helpers as api_help
 from taskpilot.api import api_response_classes as api_resp
 
@@ -145,6 +144,26 @@ async def remove_favorite_ticket(user_id: str,
     return response
 
 
+@app.post(config_info.API_ROUTES[config_info.APIOperations.USERS_LOGIN],
+          tags=["Users"])
+async def login_user(login_req: api_req.LoginRequest) -> api_resp.Response:
+    """
+    Log in a user
+    """
+    response = api_help.login_user(login_req)
+    return response
+
+
+@app.get(config_info.API_ROUTES[config_info.APIOperations.USERS_ALL_PROJECTS],
+         tags=["Users"])
+async def get_user_projects(user_id: str) -> api_resp.GetAllProjectsResponse:
+    """
+    Get all projects for a user
+    """
+    response = api_help.get_user_projects(user_id)
+    return response
+
+
 @app.get(config_info.API_ROUTES[config_info.APIOperations.PROJECTS_GET],
          tags=["Projects"])
 async def get_project(project_id: str) -> api_resp.GetProjectResponse:
@@ -242,6 +261,30 @@ async def remove_member_from_project(project_id: str,
     Remove a member from a project
     """
     response = api_help.remove_member_from_project(project_id, user_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.PROJECTS_IS_USER_OWNER],
+         tags=["Projects"])
+async def is_user_owner_of_project(project_id: str,
+                                   user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a project
+    """
+    response = api_help.is_user_owner_of_project(project_id, user_id)
+    return response
+
+
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.PROJECTS_IS_USER_MEMBER],
+         tags=["Projects"])
+async def is_user_member_of_project(project_id: str,
+                                    user_id: str) -> api_resp.Response:
+    """
+    Check if a user is a member of a project
+    """
+    response = api_help.is_user_member_of_project(project_id, user_id)
     return response
 
 
@@ -345,6 +388,18 @@ async def change_ticket_status(ticket_id: str,
     return response
 
 
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.TICKETS_IS_USER_OWNER],
+         tags=["Tickets"])
+async def is_user_owner_of_ticket(ticket_id: str,
+                                  user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a ticket
+    """
+    response = api_help.is_user_owner_of_ticket(ticket_id, user_id)
+    return response
+
+
 @app.get(config_info.API_ROUTES[config_info.APIOperations.COMMENTS_GET],
          tags=["Comments"])
 async def get_comment(comment_id: str) -> api_resp.GetCommentResponse:
@@ -397,7 +452,19 @@ async def search_comments(search_req: api_req.SearchCommentsRequest
     return response
 
 
-if __name__ == "__main__":
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.COMMENTS_IS_USER_OWNER],
+         tags=["Comments"])
+async def is_user_owner_of_comment(comment_id: str,
+                                   user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a comment
+    """
+    response = api_help.is_user_owner_of_comment(comment_id, user_id)
+    return response
+
+
+if __name__ == "__main__":  # TODO sortari
     uvicorn.run(
         app=config_info.API_APP,
         host=config_info.HOST,

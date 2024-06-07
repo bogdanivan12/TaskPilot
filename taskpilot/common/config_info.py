@@ -11,6 +11,7 @@ API_PORT = 8080
 API_APP = "api_main:app"
 
 DB_PORT = 9200
+UI_PORT = 8081
 
 DB_URL = f"http://taskpilot-elastic:{DB_PORT}"
 API_URL = f"http://taskpilot-api:{API_PORT}"
@@ -74,6 +75,13 @@ class TicketTypes:
     TASK = "Task"
     BUG = "Bug"
 
+TICKET_TYPES = [
+    TicketTypes.EPIC,
+    TicketTypes.STORY,
+    TicketTypes.TASK,
+    TicketTypes.BUG
+]
+
 
 class TicketPriorities:
     """Constants for accepted ticket priorities"""
@@ -82,13 +90,25 @@ class TicketPriorities:
     HIGH = "High"
     CRITICAL = "Critical"
 
+TICKET_PRIORITIES = [
+    TicketPriorities.LOW,
+    TicketPriorities.NORMAL,
+    TicketPriorities.HIGH,
+    TicketPriorities.CRITICAL
+]
+
 
 class TicketStatuses:
     """Constants for accepted ticket statuses"""
-    OPEN = "Open"
+    NOT_STARTED = "Not Started"
     IN_PROGRESS = "In Progress"
-    RESOLVED = "Resolved"
     CLOSED = "Closed"
+
+TICKET_STATUSES = [
+    TicketStatuses.NOT_STARTED,
+    TicketStatuses.IN_PROGRESS,
+    TicketStatuses.CLOSED
+]
 
 
 class APIOperations:
@@ -104,6 +124,8 @@ class APIOperations:
     USERS_UNASSIGN_TICKET = "users_unassign_ticket"
     USERS_ADD_FAVORITE_TICKET = "users_add_favorite_ticket"
     USERS_REMOVE_FAVORITE_TICKET = "users_remove_favorite_ticket"
+    USERS_LOGIN = "users_login"
+    USERS_ALL_PROJECTS = "users_all_projects"
 
     PROJECTS_GET = "projects_get"
     PROJECTS_CREATE = "projects_create"
@@ -114,6 +136,8 @@ class APIOperations:
     PROJECTS_ALL_TICKETS = "projects_all_tickets"
     PROJECTS_ADD_MEMBER = "projects_add_member"
     PROJECTS_REMOVE_MEMBER = "projects_remove_member"
+    PROJECTS_IS_USER_OWNER = "projects_is_user_owner"
+    PROJECTS_IS_USER_MEMBER = "projects_is_user_member"
 
     TICKETS_GET = "tickets_get"
     TICKETS_CREATE = "tickets_create"
@@ -124,12 +148,14 @@ class APIOperations:
     TICKETS_ALL_COMMENTS = "tickets_all_comments"
     TICKETS_ALL_CHILDREN = "tickets_all_children"
     TICKETS_CHANGE_STATUS = "tickets_change_status"
+    TICKETS_IS_USER_OWNER = "tickets_is_user_owner"
 
     COMMENTS_GET = "comments_get"
     COMMENTS_CREATE = "comments_create"
     COMMENTS_DELETE = "comments_delete"
     COMMENTS_ALL = "comments_all"
     COMMENTS_SEARCH = "comments_search"
+    COMMENTS_IS_USER_OWNER = "comments_is_user_owner"
 
 
 API_ROUTES = {
@@ -149,6 +175,8 @@ API_ROUTES = {
                                              "/favorites/{ticket_id}",
     APIOperations.USERS_REMOVE_FAVORITE_TICKET: "/api/users/{user_id}/tickets"
                                                 "/favorites/{ticket_id}",
+    APIOperations.USERS_LOGIN: "/api/users/login",
+    APIOperations.USERS_ALL_PROJECTS: "/api/users/{user_id}/projects",
 
     APIOperations.PROJECTS_GET: "/api/projects/{project_id}",
     APIOperations.PROJECTS_CREATE: "/api/projects",
@@ -161,6 +189,10 @@ API_ROUTES = {
                                        "/{user_id}",
     APIOperations.PROJECTS_REMOVE_MEMBER: "/api/projects/{project_id}/members"
                                           "/{user_id}",
+    APIOperations.PROJECTS_IS_USER_OWNER: "/api/projects/{project_id}/owners"
+                                          "/{user_id}",
+    APIOperations.PROJECTS_IS_USER_MEMBER: "/api/projects/{project_id}/members"
+                                           "/{user_id}",
 
     APIOperations.TICKETS_GET: "/api/tickets/{ticket_id}",
     APIOperations.TICKETS_CREATE: "/api/tickets",
@@ -172,10 +204,46 @@ API_ROUTES = {
     APIOperations.TICKETS_ALL_CHILDREN: "/api/tickets/{ticket_id}"
                                         "/children-tickets",
     APIOperations.TICKETS_CHANGE_STATUS: "/api/tickets/{ticket_id}/status",
+    APIOperations.TICKETS_IS_USER_OWNER: "/api/tickets/{ticket_id}/owners"
+                                         "/{user_id}",
 
     APIOperations.COMMENTS_GET: "/api/comments/{comment_id}",
     APIOperations.COMMENTS_CREATE: "/api/comments",
     APIOperations.COMMENTS_DELETE: "/api/comments/{comment_id}",
     APIOperations.COMMENTS_ALL: "/api/comments",
-    APIOperations.COMMENTS_SEARCH: "/api/comments/search"
+    APIOperations.COMMENTS_SEARCH: "/api/comments/search",
+    APIOperations.COMMENTS_IS_USER_OWNER: "/api/comments/{comment_id}/owners"
+                                          "/{user_id}"
 }
+
+
+class UIPages:
+    """Constants for the TaskPilot UI Pages"""
+    HOME = "home"
+    LOGIN = "login"
+    REGISTER = "register"
+    PROJECTS = "projects"
+    PROJECT = "project"
+    TICKETS = "tickets"
+    TICKET = "ticket"
+    PROFILE = "profile"
+    NOT_FOUND = "not_found"
+
+
+UI_ROUTES = {
+    UIPages.HOME: "/",
+    UIPages.LOGIN: "/login",
+    UIPages.REGISTER: "/register",
+    UIPages.PROJECTS: "/projects",
+    UIPages.PROJECT: "/projects/{project_id}",
+    UIPages.TICKETS: "/tickets",
+    UIPages.TICKET: "/tickets/{ticket_id}",
+    UIPages.PROFILE: "/profile",
+    UIPages.NOT_FOUND: "/404"
+}
+
+UNRESTRICTED_PAGE_ROUTES = [
+    UI_ROUTES[UIPages.LOGIN],
+    UI_ROUTES[UIPages.REGISTER],
+    UI_ROUTES[UIPages.NOT_FOUND]
+]

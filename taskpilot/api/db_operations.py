@@ -43,7 +43,7 @@ def get_all_items(index: str) -> Optional[Dict[str, Dict[str, Any]]]:
     """Get all items from the database"""
     conn = get_connection()
     try:
-        items = conn.search(index=index)
+        items = conn.search(index=index, size=10000)
         items_dict = {
             item["_id"]: item["_source"]
             for item in items["hits"]["hits"]
@@ -133,7 +133,7 @@ def search_items(
                 }
             }
         }
-        items = conn.search(index=index, body=query_body)
+        items = conn.search(index=index, body=query_body, size=10000)
         items_dict = {
             item["_id"]: item["_source"]
             for item in items["hits"]["hits"]

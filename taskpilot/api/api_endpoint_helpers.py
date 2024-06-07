@@ -1,10 +1,10 @@
 """File containing helper functions for the endpoints of the API service."""
-from taskpilot.api import db_operations as db
-from taskpilot.api import api_models as models
-from taskpilot.common import config_info
-from taskpilot.api import api_response_classes as api_resp
-from taskpilot.api import api_request_classes as api_req
+import uuid
 
+from taskpilot.api import db_operations as db
+from taskpilot.common import config_info, api_request_classes as api_req
+from taskpilot.common import models
+from taskpilot.api import api_response_classes as api_resp
 
 logger = config_info.get_logger()
 
@@ -41,6 +41,8 @@ def create_user(user_req: api_req.CreateUserRequest) -> api_resp.Response:
     Create a user
     """
     index = config_info.DB_INDEXES[config_info.Entities.USER]
+    if not user_req.username:
+        user_req.username = str(uuid.uuid4())
     user_dict = user_req.dict()
     password = user_dict.pop("password")
     hashed_password = config_info.hash_password(password)
@@ -48,11 +50,22 @@ def create_user(user_req: api_req.CreateUserRequest) -> api_resp.Response:
     user_dict["username"] = user_dict["username"].lower()
     user = models.User.parse_obj(user_dict)
 
+    existent_user = get_user(user.username).user
+    if existent_user is not None:
+        response = api_resp.Response(
+            message=f"Failed to create user with id '{user.username}': user"
+                    f" already exists",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
     db_create_result = db.create_item(index, user.dict(), user.username)
 
     if not db_create_result:
         response = api_resp.Response(
-            message="Failed to create user with id '{user_req.username}'",
+            message=f"Failed to create user with id '{user_req.username}'",
             code=424,
             result=False
         )
@@ -72,18 +85,6 @@ def update_user(user_id: str,
     Update a user
     """
     user_id = user_id.lower()
-
-    for project_id in user_req.member_of:
-        project = get_project(project_id).project
-        if project is None:
-            response = api_resp.Response(
-                message=f"Failed to update user with id '{user_id}' due to"
-                        f" non-existent project with id '{project_id}'",
-                code=424,
-                result=False
-            )
-            logger.error(response.message)
-            return response
 
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     user_dict = user_req.dict()
@@ -375,6 +376,61 @@ def remove_favorite_ticket(user_id: str, ticket_id: str) -> api_resp.Response:
     return response
 
 
+def login_user(login_req: api_req.LoginRequest) -> api_resp.Response:
+    """
+    Log in a user
+    """
+    username = login_req.username.lower()
+    password = login_req.password
+    hashed_password = config_info.hash_password(password)
+    user = get_user(username).user
+
+    if user is None:
+        response = api_resp.Response(
+            message="Failed to log in: incorrect username or password",
+            code=401,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if user.hashed_password == hashed_password:
+        response = api_resp.Response(
+            message=f"User with id '{username}' logged in successfully"
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message="Failed to log in: incorrect username or password",
+        code=401,
+        result=False
+    )
+    logger.error(response.message)
+    return response
+
+
+def get_user_projects(user_id: str) -> api_resp.GetAllProjectsResponse:
+    """
+    Get all projects for a user
+    """
+    user_id = user_id.lower()
+
+    all_projects = get_all_projects().projects
+    user_projects = [
+        project for project in all_projects
+        if user_id in project.members or user_id == project.created_by
+    ]
+
+    response = api_resp.GetAllProjectsResponse(
+        message=f"All projects for user with id '{user_id}' retrieved"
+                f" successfully",
+        projects=user_projects
+    )
+    logger.info(response.message)
+    return response
+
+
 def get_project(project_id: str) -> api_resp.GetProjectResponse:
     """
     Get a project by id
@@ -406,6 +462,8 @@ def create_project(
     Create a project
     """
     index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
+    if not project_req.project_id:
+        project_req.project_id = str(uuid.uuid4())
     project_dict = project_req.dict()
     project_dict["created_at"] = config_info.get_current_time()
     project_dict["modified_at"] = project_dict["created_at"]
@@ -416,7 +474,8 @@ def create_project(
     if owner_user is None:
         response = api_resp.Response(
             message=f"Failed to create project with id '{project.project_id}'"
-                    f" due to non-existent user with id '{project.created_by}'",
+                    f" due to non-existent user with id"
+                    f" '{project.created_by}'",
             code=424,
             result=False
         )
@@ -678,15 +737,7 @@ def add_member_to_project(project_id: str,
     db_update_project_result = db.update_item(projects_index, project_id,
                                               project_dict)
 
-    users_index = config_info.DB_INDEXES[config_info.Entities.USER]
-    user_dict = get_user(user_id).user.dict()
-    projects = set(user_dict["member_of"])
-    projects.add(project_id)
-    user_dict["member_of"] = list(projects)
-
-    db_update_user_result = db.update_item(users_index, user_id, user_dict)
-
-    if not db_update_project_result or not db_update_user_result:
+    if not db_update_project_result:
         response = api_resp.Response(
             message=f"Failed to add user with id '{user_id}' to project with"
                     f" id '{project_id}'",
@@ -729,7 +780,6 @@ def remove_member_from_project(project_id: str,
     db_update_project_result = db.update_item(projects_index, project_id,
                                               project_dict)
 
-    users_index = config_info.DB_INDEXES[config_info.Entities.USER]
     user = get_user(user_id).user
     if user is None:
         response = api_resp.Response(
@@ -741,14 +791,7 @@ def remove_member_from_project(project_id: str,
         logger.error(response.message)
         return response
 
-    user_dict = user.dict()
-    projects = set(user_dict["member_of"])
-    projects.discard(project_id)
-    user_dict["member_of"] = list(projects)
-
-    db_update_user_result = db.update_item(users_index, user_id, user_dict)
-
-    if not db_update_project_result or not db_update_user_result:
+    if not db_update_project_result:
         response = api_resp.Response(
             message=f"Failed to remove user with id '{user_id}' from project"
                     f" with id '{project_id}'",
@@ -761,6 +804,102 @@ def remove_member_from_project(project_id: str,
     response = api_resp.Response(
         message=f"User with id '{user_id}' removed from project with id"
                 f" '{project_id}' successfully"
+    )
+    logger.info(response.message)
+    return response
+
+
+def is_user_owner_of_project(project_id: str,
+                             user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a project
+    """
+    project = get_project(project_id).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if project.created_by == user_id or user.is_admin:
+        response = api_resp.Response(
+            message=f"User with id '{user_id}' is the owner of project with"
+                    f" id '{project_id}'",
+            result=True
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user_id}' is not the owner of project with"
+                f" id '{project_id}'",
+        result=False
+    )
+    logger.info(response.message)
+    return response
+
+
+def is_user_member_of_project(project_id: str,
+                              user_id: str) -> api_resp.Response:
+    """
+    Check if a user is a member of a project
+    """
+    project = get_project(project_id).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is member of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is member of"
+                    f" project with id '{project_id}' due to non-existent"
+                    f" user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if (user_id in project.members
+            or project.created_by == user_id
+            or user.is_admin):
+        response = api_resp.Response(
+            message=f"User with id '{user_id}' is a member of project with"
+                    f" id '{project_id}'",
+            result=True
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user_id}' is not a member of project with"
+                f" id '{project_id}'",
+        result=False
     )
     logger.info(response.message)
     return response
@@ -796,8 +935,13 @@ def create_ticket(
     """
     Create a ticket
     """
+    if not ticket_req.ticket_id:
+        ticket_req.ticket_id = str(uuid.uuid4())
     created_by = get_user(ticket_req.created_by).user
-    assignee = get_user(ticket_req.assignee).user
+    assignee = (
+        get_user(ticket_req.assignee).user
+        if ticket_req.assignee else None
+    )
     if (created_by is None
             or (assignee is None and ticket_req.assignee is not None)):
         response = api_resp.Response(
@@ -809,7 +953,10 @@ def create_ticket(
         logger.error(response.message)
         return response
 
-    parent_project = get_project(ticket_req.parent_project).project
+    parent_project = (
+        get_project(ticket_req.parent_project).project
+        if ticket_req.parent_project else None
+    )
     if parent_project is None:
         response = api_resp.Response(
             message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
@@ -820,16 +967,18 @@ def create_ticket(
         logger.error(response.message)
         return response
 
-    parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
-    if parent_ticket is None and ticket_req.parent_ticket is not None:
-        response = api_resp.Response(
-            message=f"Failed to create ticket with id '{ticket_req.ticket_id}'"
-                    f" due to non-existent parent ticket",
-            code=424,
-            result=False
-        )
-        logger.error(response.message)
-        return response
+    if ticket_req.parent_ticket:
+        parent_ticket = get_ticket(ticket_req.parent_ticket).ticket
+        if parent_ticket is None and ticket_req.parent_ticket is not None:
+            response = api_resp.Response(
+                message=f"Failed to create ticket with id"
+                        f" '{ticket_req.ticket_id}'"
+                        f" due to non-existent parent ticket",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
 
     index = config_info.DB_INDEXES[config_info.Entities.TICKET]
     ticket_dict = ticket_req.dict()
@@ -864,7 +1013,8 @@ def update_ticket(
     Update a ticket
     """
     modified_by = get_user(ticket_req.modified_by).user
-    assignee = get_user(ticket_req.assignee).user
+    assignee = (get_user(ticket_req.assignee).user
+                if ticket_req.assignee else None)
     if (modified_by is None or
             (assignee is None and ticket_req.assignee is not None)):
         response = api_resp.Response(
@@ -1136,11 +1286,73 @@ def get_comment(comment_id: str) -> api_resp.GetCommentResponse:
     return response
 
 
+def is_user_owner_of_ticket(ticket_id: str,
+                            user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a ticket
+    """
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" ticket with id '{ticket_id}' due to non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    ticket = get_ticket(ticket_id).ticket
+    if ticket is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" ticket with id '{ticket_id}' due to non-existent"
+                    f" ticket",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    project = get_project(ticket.parent_project).project
+    if project is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" ticket with id '{ticket_id}' due to non-existent"
+                    f" parent project",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if (user.username == ticket.created_by
+            or user.username == project.created_by
+            or user.is_admin
+            or is_user_owner_of_ticket(ticket.parent_ticket, user_id).result):
+        response = api_resp.Response(
+            message=f"User with id '{user.username}' is the owner of ticket"
+                    f" with id '{ticket_id}'"
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user.username}' is not the owner of ticket"
+                f" with id '{ticket_id}'",
+        result=False
+    )
+    logger.info(response.message)
+    return response
+
+
 def create_comment(
         comment_req: api_req.CreateCommentRequest) -> api_resp.Response:
     """
     Create a comment
     """
+    if not comment_req.comment_id:
+        comment_req.comment_id = str(uuid.uuid4())
     user = get_user(comment_req.created_by).user
     if user is None:
         response = api_resp.Response(
@@ -1269,6 +1481,53 @@ def search_comments(search_req: api_req.SearchCommentsRequest
     response = api_resp.GetAllCommentsResponse(
         message="Comments retrieved successfully",
         comments=comments
+    )
+    logger.info(response.message)
+    return response
+
+
+def is_user_owner_of_comment(comment_id: str,
+                             user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a comment
+    """
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" comment with id '{comment_id}' due to non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    comment = get_comment(comment_id).comment
+    if comment is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" comment with id '{comment_id}' due to non-existent"
+                    f" comment",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if (user.username == comment.created_by
+            or user.is_admin
+            or is_user_owner_of_ticket(comment.ticket_id, user_id).result):
+        response = api_resp.Response(
+            message=f"User with id '{user.username}' is the owner of comment"
+                    f" with id '{comment_id}'"
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user.username}' is not the owner of comment"
+                f" with id '{comment_id}'",
+        result=False
     )
     logger.info(response.message)
     return response
