@@ -171,7 +171,6 @@ def project_page(project_id: str) -> None:
 
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
-        ticket_id = ui.input("Ticket ID").classes("w-4/5")
         ticket_title = ui.input("Title").classes("w-4/5")
         ticket_description = ui.textarea("Description").classes("w-4/5")
         ticket_type = ui.select(config_info.TICKET_TYPES,
@@ -186,8 +185,16 @@ def project_page(project_id: str) -> None:
         ).classes("w-4/5")
 
         def create_button_clicked():
+            next_ticket_id = requests.get(
+                config_info.API_URL
+                + "/"
+                + config_info.API_ROUTES[APIOps.PROJECTS_GET].format(
+                    project_id=parent_project.value
+                )
+            ).json()["project"]["next_ticket_id"]
+
             create_ticket_request = api_req.CreateTicketRequest(
-                ticket_id=ticket_id.value,
+                ticket_id=f"{parent_project.value}-{next_ticket_id}",
                 title=ticket_title.value,
                 description=ticket_description.value,
                 type=ticket_type.value,
@@ -227,7 +234,6 @@ def project_page(project_id: str) -> None:
 
     def open_dialog():
         # Clear the input fields
-        ticket_id.value = ""
         ticket_title.value = ""
         ticket_description.value = ""
         ticket_type.value = config_info.TicketTypes.TASK

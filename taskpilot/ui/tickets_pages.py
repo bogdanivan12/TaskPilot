@@ -13,7 +13,6 @@ def tickets_page() -> None:
     """Tickets page for the TaskPilot application"""
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
-        ticket_id = ui.input("Ticket ID").classes("w-4/5")
         title = ui.input("Title").classes("w-4/5")
         description = ui.textarea("Description").classes("w-4/5")
         ticket_type = ui.select(config_info.TICKET_TYPES,
@@ -41,8 +40,16 @@ def tickets_page() -> None:
                 ui.notify("Please select a parent project", color="negative")
                 return
 
+            next_ticket_id = requests.get(
+                config_info.API_URL
+                + "/"
+                + config_info.API_ROUTES[APIOps.PROJECTS_GET].format(
+                    project_id=parent_project.value
+                )
+            ).json()["project"]["next_ticket_id"]
+
             create_ticket_request = api_req.CreateTicketRequest(
-                ticket_id=ticket_id.value,
+                ticket_id=f"{parent_project.value}-{next_ticket_id}",
                 title=title.value,
                 description=description.value,
                 type=ticket_type.value,
@@ -82,7 +89,6 @@ def tickets_page() -> None:
 
     def open_dialog():
         # Clear the input fields
-        ticket_id.value = ""
         title.value = ""
         description.value = ""
         ticket_type.value = config_info.TicketTypes.TASK
@@ -299,7 +305,6 @@ def ticket_page(ticket_id: str) -> None:
     with ui.dialog() as create_child_ticket_dialog, ui.card().classes(
             "w-full items-center"):
         ui.label("Create Child Ticket").classes("text-2xl")
-        child_ticket_id = ui.input("Ticket ID").classes("w-4/5")
         child_title = ui.input("Title").classes("w-4/5")
         child_description = ui.textarea("Description").classes("w-4/5")
         child_ticket_type = ui.select(config_info.TICKET_TYPES,
@@ -315,7 +320,16 @@ def ticket_page(ticket_id: str) -> None:
                         + "/"
                         + config_info.API_ROUTES[APIOps.TICKETS_CREATE],
                         json=api_req.CreateTicketRequest(
-                            ticket_id=child_ticket_id.value,
+                            ticket_id=t.parent_project + "-" + str(
+                                requests.get(
+                                    config_info.API_URL
+                                    + "/"
+                                    + config_info.API_ROUTES[
+                                        APIOps.PROJECTS_GET].format(
+                                        project_id=t.parent_project
+                                    )
+                                ).json()["project"]["next_ticket_id"]
+                            ),
                             title=child_title.value,
                             description=child_description.value,
                             type=child_ticket_type.value,
@@ -336,7 +350,6 @@ def ticket_page(ticket_id: str) -> None:
 
     def open_create_child_ticket_dialog():
         # Clear the input fields
-        child_ticket_id.value = ""
         child_title.value = ""
         child_description.value = ""
         child_ticket_type.value = config_info.TicketTypes.TASK
@@ -357,6 +370,16 @@ def ticket_page(ticket_id: str) -> None:
                         + "/"
                         + config_info.API_ROUTES[APIOps.COMMENTS_CREATE],
                         json=api_req.CreateCommentRequest(
+                            comment_id=ticket.ticket_id + "-" + str(
+                                requests.get(
+                                    config_info.API_URL
+                                    + "/"
+                                    + config_info.API_ROUTES[
+                                        APIOps.TICKETS_GET].format(
+                                        ticket_id=ticket_id
+                                    )
+                                ).json()["ticket"]["next_comment_id"]
+                            ),
                             ticket_id=ticket_id,
                             text=comment_content.value,
                             created_by=app.storage.user.get("username", "")
@@ -657,7 +680,7 @@ def ticket_page(ticket_id: str) -> None:
         for ticket_comment in ticket_comments:
             with ui.card().classes("w-full justify-between"):
                 with ui.row().classes("items-center justify-between w-full"):
-                    ui.label(ticket_comment.created_by).classes("text-lg px-4")
+                    ui.label(ticket_comment.created_by).classes("text-base px-4")
                     ui.space()
                     ui.label(ticket_comment.created_at).classes("text-base"
                                                                 " px-4")
@@ -688,4 +711,4 @@ def ticket_page(ticket_id: str) -> None:
                             )
                         ).classes("text-white text-base")
                 ui.separator()
-                ui.label(ticket_comment.text).classes("text-2xl p-4")
+                ui.label(ticket_comment.text).classes("text-xl p-4")

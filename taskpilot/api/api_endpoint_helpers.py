@@ -999,6 +999,12 @@ def create_ticket(
         logger.error(response.message)
         return response
 
+    db.update_item(
+        config_info.DB_INDEXES[config_info.Entities.PROJECT],
+        ticket.parent_project,
+        {"next_ticket_id": parent_project.next_ticket_id + 1}
+    )
+
     response = api_resp.Response(
         message=f"Ticket with id '{ticket.ticket_id}' created successfully"
     )
@@ -1396,6 +1402,12 @@ def create_comment(
         logger.error(response.message)
         return response
 
+    db.update_item(
+        config_info.DB_INDEXES[config_info.Entities.TICKET],
+        comment.ticket_id,
+        {"next_comment_id": ticket.next_comment_id + 1}
+    )
+
     response = api_resp.Response(
         message=f"Comment with id '{comment.comment_id}' created successfully"
     )
@@ -1495,7 +1507,8 @@ def is_user_owner_of_comment(comment_id: str,
     if user is None:
         response = api_resp.Response(
             message=f"Failed to check if user with id '{user_id}' is owner of"
-                    f" comment with id '{comment_id}' due to non-existent user",
+                    f" comment with id '{comment_id}' due to non-existent"
+                    f" user",
             code=424,
             result=False
         )
