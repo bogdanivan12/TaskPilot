@@ -149,7 +149,7 @@ def tickets_page() -> None:
             return
 
         user_tickets.sort(key=lambda ticket: datetime.datetime.strptime(
-            ticket.modified_at, "%d-%m-%Y %H:%M:%S"), reverse=True)
+            ticket.modified_at, config_info.DATETIME_FORMAT), reverse=True)
 
         for ticket in user_tickets:
             with ui.card().classes("w-full"):

@@ -1,4 +1,5 @@
 """File containing helper functions for the endpoints of the API service."""
+import datetime
 import uuid
 
 from taskpilot.api import db_operations as db
@@ -155,6 +156,9 @@ def get_all_users() -> api_resp.GetAllUsersResponse:
 
     users = [models.User.parse_obj(user)
              for user in db_get_all_result.values()]
+
+    users.sort(key=lambda user: user.username)
+
     response = api_resp.GetAllUsersResponse(
         message="All users retrieved successfully",
         users=users
@@ -191,6 +195,9 @@ def search_users(search_req: api_req.SearchUsersRequest
 
     users = [models.User.parse_obj(user)
              for user in db_search_result.values()]
+
+    users.sort(key=lambda user: user.username)
+
     response = api_resp.GetAllUsersResponse(
         message="Users retrieved successfully",
         users=users
@@ -223,6 +230,10 @@ def get_all_assigned_tickets(user_id: str) -> api_resp.GetAllTicketsResponse:
 
     tickets = [models.Ticket.parse_obj(ticket)
                for ticket in db_search_result.values()]
+
+    tickets.sort(key=lambda ticket: datetime.datetime.strptime(
+        ticket.modified_at, config_info.DATETIME_FORMAT), reverse=True)
+
     response = api_resp.GetAllTicketsResponse(
         message=f"All tickets assigned to user with id '{user_id}' retrieved"
                 f" successfully",
@@ -627,6 +638,10 @@ def get_all_projects() -> api_resp.GetAllProjectsResponse:
 
     projects = [models.Project.parse_obj(project)
                 for project in db_get_all_result.values()]
+
+    projects.sort(key=lambda project: datetime.datetime.strptime(
+        project.modified_at, config_info.DATETIME_FORMAT), reverse=True)
+
     response = api_resp.GetAllProjectsResponse(
         message="All projects retrieved successfully",
         projects=projects
@@ -661,6 +676,10 @@ def search_projects(search_req: api_req.SearchProjectsRequest
 
     projects = [models.Project.parse_obj(project)
                 for project in db_search_result.values()]
+
+    projects.sort(key=lambda project: datetime.datetime.strptime(
+        project.modified_at, config_info.DATETIME_FORMAT), reverse=True)
+
     response = api_resp.GetAllProjectsResponse(
         message="Projects retrieved successfully",
         projects=projects
@@ -692,6 +711,10 @@ def get_all_tickets_in_project(project_id: str
 
     tickets = [models.Ticket.parse_obj(ticket)
                for ticket in db_search_result.values()]
+
+    tickets.sort(key=lambda ticket: datetime.datetime.strptime(
+        ticket.modified_at, config_info.DATETIME_FORMAT), reverse=True)
+
     response = api_resp.GetAllTicketsResponse(
         message=f"All tickets in project with id '{project_id}' retrieved"
                 f" successfully",
@@ -1136,6 +1159,10 @@ def get_all_tickets() -> api_resp.GetAllTicketsResponse:
 
     tickets = [models.Ticket.parse_obj(ticket)
                for ticket in db_get_all_result.values()]
+
+    tickets.sort(key=lambda ticket: datetime.datetime.strptime(
+        ticket.modified_at, config_info.DATETIME_FORMAT), reverse=True)
+
     response = api_resp.GetAllTicketsResponse(
         message="All tickets retrieved successfully",
         tickets=tickets
@@ -1170,6 +1197,10 @@ def search_tickets(search_req: api_req.SearchTicketsRequest
 
     tickets = [models.Ticket.parse_obj(ticket)
                for ticket in db_search_result.values()]
+
+    tickets.sort(key=lambda ticket: datetime.datetime.strptime(
+        ticket.modified_at, config_info.DATETIME_FORMAT), reverse=True)
+
     response = api_resp.GetAllTicketsResponse(
         message="Tickets retrieved successfully",
         tickets=tickets
@@ -1200,6 +1231,10 @@ def get_all_comments_for_ticket(ticket_id: str
 
     comments = [models.Comment.parse_obj(comment)
                 for comment in db_search_result.values()]
+
+    comments.sort(key=lambda comment: datetime.datetime.strptime(
+        comment.created_at, config_info.DATETIME_FORMAT))
+
     response = api_resp.GetAllCommentsResponse(
         message=f"All comments for ticket with id '{ticket_id}' retrieved"
                 f" successfully",
@@ -1231,6 +1266,10 @@ def get_all_children_tickets(ticket_id: str
 
     tickets = [models.Ticket.parse_obj(ticket)
                for ticket in db_search_result.values()]
+
+    tickets.sort(key=lambda ticket: datetime.datetime.strptime(
+        ticket.modified_at, config_info.DATETIME_FORMAT), reverse=True)
+
     response = api_resp.GetAllTicketsResponse(
         message=f"All children tickets for ticket with id '{ticket_id}'"
                 f" retrieved successfully",
@@ -1456,6 +1495,10 @@ def get_all_comments() -> api_resp.GetAllCommentsResponse:
 
     comments = [models.Comment.parse_obj(comment)
                 for comment in db_get_all_result.values()]
+
+    comments.sort(key=lambda comment: datetime.datetime.strptime(
+        comment.modified_at, config_info.DATETIME_FORMAT))
+
     response = api_resp.GetAllCommentsResponse(
         message="All comments retrieved successfully",
         comments=comments
@@ -1490,6 +1533,10 @@ def search_comments(search_req: api_req.SearchCommentsRequest
 
     comments = [models.Comment.parse_obj(comment)
                 for comment in db_search_result.values()]
+
+    comments.sort(key=lambda comment: datetime.datetime.strptime(
+        comment.created_at, config_info.DATETIME_FORMAT))
+
     response = api_resp.GetAllCommentsResponse(
         message="Comments retrieved successfully",
         comments=comments

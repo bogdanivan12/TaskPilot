@@ -21,6 +21,8 @@ LOGGING_FORMAT = (
     "[%(funcName)s: %(lineno)s] [%(levelname)s] %(message)s"
 )
 
+DATETIME_FORMAT = "%d-%m-%Y %H:%M:%S"
+
 
 def hash_password(password: str) -> str:
     """Hash a password using SHA-256 algorithm"""
@@ -49,7 +51,7 @@ def get_logger():
 
 def get_current_time() -> str:
     """Get the current time in a formatted string"""
-    return str(datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+    return str(datetime.datetime.now().strftime(DATETIME_FORMAT))
 
 
 class Entities:

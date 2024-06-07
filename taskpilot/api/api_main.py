@@ -464,7 +464,7 @@ async def is_user_owner_of_comment(comment_id: str,
     return response
 
 
-if __name__ == "__main__":  # TODO sortari
+if __name__ == "__main__":
     uvicorn.run(
         app=config_info.API_APP,
         host=config_info.HOST,
