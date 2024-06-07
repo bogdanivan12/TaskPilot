@@ -283,6 +283,54 @@ def ticket_page(ticket_id: str) -> None:
             ui.button("Cancel", on_click=delete_ticket_dialog.close
                       ).classes("text-white")
 
+    with ui.dialog() as create_child_ticket_dialog, ui.card().classes(
+            "w-full items-center"):
+        ui.label("Create Child Ticket").classes("text-2xl")
+        child_ticket_id = ui.input("Ticket ID").classes("w-4/5")
+        child_title = ui.input("Title").classes("w-4/5")
+        child_description = ui.textarea("Description").classes("w-4/5")
+        child_ticket_type = ui.select(config_info.TICKET_TYPES,
+                                        label="Type").classes("w-4/5")
+        child_priority = ui.select(config_info.TICKET_PRIORITIES,
+                                   label="Priority").classes("w-4/5")
+        with ui.row().classes("items-center justify-between"):
+            ui.button(
+                "Create",
+                on_click=lambda t=ticket: (
+                    requests.post(
+                        config_info.API_URL
+                        + "/"
+                        + config_info.API_ROUTES[APIOps.TICKETS_CREATE],
+                        json=api_req.CreateTicketRequest(
+                            ticket_id=child_ticket_id.value,
+                            title=child_title.value,
+                            description=child_description.value,
+                            type=child_ticket_type.value,
+                            priority=child_priority.value,
+                            status=config_info.TicketStatuses.NOT_STARTED,
+                            created_by=app.storage.user.get("username", ""),
+                            parent_project=t.parent_project,
+                            parent_ticket=ticket_id
+                        ).dict()
+                    ),
+                    create_child_ticket_dialog.close(),
+                    time.sleep(1),
+                    ui.navigate.reload()
+                )
+            ).classes("text-white mr-2")
+            ui.button("Cancel", on_click=create_child_ticket_dialog.close
+                      ).classes("text-white")
+
+    def open_create_child_ticket_dialog():
+        # Clear the input fields
+        child_ticket_id.value = ""
+        child_title.value = ""
+        child_description.value = ""
+        child_ticket_type.value = config_info.TicketTypes.TASK
+        child_priority.value = config_info.TicketPriorities.NORMAL
+
+        create_child_ticket_dialog.open()
+
     with ui.row().classes("items-center justify-between w-full self-center"
                           " px-6 py-2"):
         ui.chip(
@@ -486,7 +534,7 @@ def ticket_page(ticket_id: str) -> None:
         ui.chip(
             text="Create Child Ticket",
             icon="add",
-            on_click=lambda: None
+            on_click=open_create_child_ticket_dialog
         ).classes("text-white text-base")
         ui.separator()
 
