@@ -153,6 +153,7 @@ class APIOperations:
     COMMENTS_DELETE = "comments_delete"
     COMMENTS_ALL = "comments_all"
     COMMENTS_SEARCH = "comments_search"
+    COMMENTS_IS_USER_OWNER = "comments_is_user_owner"
 
 
 API_ROUTES = {
@@ -204,7 +205,9 @@ API_ROUTES = {
     APIOperations.COMMENTS_CREATE: "/api/comments",
     APIOperations.COMMENTS_DELETE: "/api/comments/{comment_id}",
     APIOperations.COMMENTS_ALL: "/api/comments",
-    APIOperations.COMMENTS_SEARCH: "/api/comments/search"
+    APIOperations.COMMENTS_SEARCH: "/api/comments/search",
+    APIOperations.COMMENTS_IS_USER_OWNER: "/api/comments/{comment_id}/owner"
+                                          "/{user_id}"
 }
 
 

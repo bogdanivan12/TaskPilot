@@ -107,7 +107,7 @@ class SearchTicketsRequest(BaseModel):
 
 class CreateCommentRequest(BaseModel):
     """Create comment request model"""
-    comment_id: str
+    comment_id: Optional[str] = None
     ticket_id: str
     text: str
     created_by: str

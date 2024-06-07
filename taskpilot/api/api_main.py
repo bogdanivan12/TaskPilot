@@ -428,6 +428,18 @@ async def search_comments(search_req: api_req.SearchCommentsRequest
     return response
 
 
+@app.get(config_info.API_ROUTES[
+             config_info.APIOperations.COMMENTS_IS_USER_OWNER],
+         tags=["Comments"])
+async def is_user_owner_of_comment(comment_id: str,
+                                   user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a comment
+    """
+    response = api_help.is_user_owner_of_comment(comment_id, user_id)
+    return response
+
+
 if __name__ == "__main__":
     uvicorn.run(
         app=config_info.API_APP,

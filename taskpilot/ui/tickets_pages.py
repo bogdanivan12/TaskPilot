@@ -331,6 +331,37 @@ def ticket_page(ticket_id: str) -> None:
 
         create_child_ticket_dialog.open()
 
+    with ui.dialog() as create_comment_dialog, ui.card().classes(
+            "w-full items-center"):
+        ui.label("Create Comment").classes("text-2xl")
+        comment_content = ui.textarea("Comment").classes("w-4/5")
+        with ui.row().classes("items-center justify-between"):
+            ui.button(
+                "Add Comment",
+                on_click=lambda: (
+                    requests.post(
+                        config_info.API_URL
+                        + "/"
+                        + config_info.API_ROUTES[APIOps.COMMENTS_CREATE],
+                        json=api_req.CreateCommentRequest(
+                            ticket_id=ticket_id,
+                            text=comment_content.value,
+                            created_by=app.storage.user.get("username", "")
+                        ).dict()
+                    ),
+                    create_comment_dialog.close(),
+                    time.sleep(1),
+                    ui.navigate.reload()
+                )
+            ).classes("text-white mr-2")
+            ui.button("Cancel", on_click=create_comment_dialog.close
+                      ).classes("text-white")
+
+    def open_create_comment_dialog():
+        # Clear the input fields
+        comment_content.value = ""
+        create_comment_dialog.open()
+
     with ui.row().classes("items-center justify-between w-full self-center"
                           " px-6 py-2"):
         ui.chip(
@@ -518,8 +549,7 @@ def ticket_page(ticket_id: str) -> None:
                 on_click=delete_ticket_dialog.open
             ).classes("text-white text-base")
 
-    ui.separator()
-    with ui.row().classes("items-center justify-between w-full"):
+    with ui.row().classes("items-center justify-between w-full px-6 py-2"):
         ui.label(f"Created by {ticket.created_by}"
                  f" at {ticket.created_at}")
         ui.space()
@@ -536,7 +566,6 @@ def ticket_page(ticket_id: str) -> None:
             icon="add",
             on_click=open_create_child_ticket_dialog
         ).classes("text-white text-base")
-        ui.separator()
 
     get_child_tickets_url = (
         config_info.API_URL
@@ -554,33 +583,34 @@ def ticket_page(ticket_id: str) -> None:
     if not child_tickets:
         ui.label("No child tickets").classes("text-2xl self-center")
 
-    for ticket in child_tickets:
-        with ui.card().classes("w-full"):
-            with ui.row().classes("items-center justify-between w-full"):
-                ui.chip(
-                    text=ticket.ticket_id,
-                    icon="arrow_right",
-                    on_click=lambda t=ticket: ui.navigate.to(
-                        config_info.UI_ROUTES[
-                            config_info.UIPages.TICKET].format(
-                            ticket_id=t.ticket_id
+    with ui.column().classes("items-center w-full self-center px-6 py-2"):
+        for ticket in child_tickets:
+            with ui.card().classes("w-full"):
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.chip(
+                        text=ticket.ticket_id,
+                        icon="arrow_right",
+                        on_click=lambda t=ticket: ui.navigate.to(
+                            config_info.UI_ROUTES[
+                                config_info.UIPages.TICKET].format(
+                                ticket_id=t.ticket_id
+                            )
                         )
-                    )
-                ).classes("text-white text-base")
-                ui.label(ticket.title).classes("text-2xl font-bold")
-                ui.space()
-            ui.label(ticket.description).classes("text-lg")
-            ui.separator()
-            ui.label(f"{ticket.type} | Priority: {ticket.priority}"
-                     f" | Status: {ticket.status}").classes("text-base")
-            ui.label(f"Assignee: {ticket.assignee}")
-            ui.separator()
-            with ui.row().classes("items-center justify-between w-full"):
-                ui.label(f"Created by {ticket.created_by}"
-                         f" at {ticket.created_at}")
-                ui.space()
-                ui.label(f"Modified by {ticket.modified_by}"
-                         f" at {ticket.modified_at}")
+                    ).classes("text-white text-base")
+                    ui.label(ticket.title).classes("text-2xl font-bold")
+                    ui.space()
+                ui.label(ticket.description).classes("text-lg")
+                ui.separator()
+                ui.label(f"{ticket.type} | Priority: {ticket.priority}"
+                         f" | Status: {ticket.status}").classes("text-base")
+                ui.label(f"Assignee: {ticket.assignee}")
+                ui.separator()
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label(f"Created by {ticket.created_by}"
+                             f" at {ticket.created_at}")
+                    ui.space()
+                    ui.label(f"Modified by {ticket.modified_by}"
+                             f" at {ticket.modified_at}")
     ui.separator()
 
     with ui.row().classes("items-center justify-between w-full self-center"
@@ -588,11 +618,10 @@ def ticket_page(ticket_id: str) -> None:
         ui.label("Comments").classes("text-3xl font-bold")
         ui.space()
         ui.chip(
-            text="Create Comment",
+            text="Add Comment",
             icon="add",
-            on_click=lambda: None
+            on_click=open_create_comment_dialog
         ).classes("text-white text-base")
-        ui.separator()
 
     get_ticket_comments_url = (
         config_info.API_URL
@@ -611,9 +640,39 @@ def ticket_page(ticket_id: str) -> None:
         ui.label("No comments").classes("text-2xl self-center")
         return
 
-    for comment in ticket_comments:
-        ui.chat_message(
-            comment.text,
-            name=comment.created_by,
-            stamp=comment.created_at
-        ).classes("w-full self-center px-6 py-2")
+    with ui.column().classes("items-center w-full self-center px-6 py-2"):
+        for ticket_comment in ticket_comments:
+            with ui.card().classes("w-full justify-between"):
+                with ui.row().classes("items-center justify-between w-full"):
+                    ui.label(ticket_comment.created_by).classes("text-lg px-4")
+                    ui.space()
+                    ui.label(ticket_comment.created_at).classes("text-base"
+                                                                " px-4")
+                    if requests.get(
+                            config_info.API_URL
+                            + "/"
+                            + config_info.API_ROUTES[
+                                APIOps.COMMENTS_IS_USER_OWNER].format(
+                                comment_id=ticket_comment.comment_id,
+                                user_id=app.storage.user.get("username", "")
+                            )
+                    ).json()["result"]:
+                        ui.chip(
+                            "Delete",
+                            icon="delete",
+                            color="negative",
+                            on_click=lambda c=ticket_comment: (
+                                requests.delete(
+                                    config_info.API_URL
+                                    + "/"
+                                    + config_info.API_ROUTES[
+                                        APIOps.COMMENTS_DELETE].format(
+                                        comment_id=c.comment_id
+                                    )
+                                ),
+                                time.sleep(1),
+                                ui.navigate.reload()
+                            )
+                        ).classes("text-white text-base")
+                ui.separator()
+                ui.label(ticket_comment.text).classes("text-2xl p-4")

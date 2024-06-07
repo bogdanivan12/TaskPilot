@@ -154,7 +154,7 @@ def projects_page() -> None:
     return None
 
 
-def project_page(project_id: str) -> None:
+def project_page(project_id: str) -> None:  # TODO Edit Project
     """Project page for the TaskPilot application"""
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")

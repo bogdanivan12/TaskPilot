@@ -1388,3 +1388,50 @@ def search_comments(search_req: api_req.SearchCommentsRequest
     )
     logger.info(response.message)
     return response
+
+
+def is_user_owner_of_comment(comment_id: str,
+                             user_id: str) -> api_resp.Response:
+    """
+    Check if a user is the owner of a comment
+    """
+    user = get_user(user_id).user
+    if user is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" comment with id '{comment_id}' due to non-existent user",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    comment = get_comment(comment_id).comment
+    if comment is None:
+        response = api_resp.Response(
+            message=f"Failed to check if user with id '{user_id}' is owner of"
+                    f" comment with id '{comment_id}' due to non-existent"
+                    f" comment",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    if (user.username == comment.created_by
+            or user.is_admin
+            or is_user_owner_of_ticket(comment.ticket_id, user_id).result):
+        response = api_resp.Response(
+            message=f"User with id '{user.username}' is the owner of comment"
+                    f" with id '{comment_id}'"
+        )
+        logger.info(response.message)
+        return response
+
+    response = api_resp.Response(
+        message=f"User with id '{user.username}' is not the owner of comment"
+                f" with id '{comment_id}'",
+        result=False
+    )
+    logger.info(response.message)
+    return response
