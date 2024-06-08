@@ -1,5 +1,5 @@
 """API request classes"""
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 
 
@@ -119,3 +119,10 @@ class SearchCommentsRequest(BaseModel):
     ticket_id: Optional[str] = None
     text: Optional[str] = None
     created_by: Optional[str] = None
+
+
+class AIRequest(BaseModel):
+    """AI request model"""
+    prompt: str
+    system_prompt: Optional[str] = None
+    chat_history: Optional[List[Dict[str, str]]] = None

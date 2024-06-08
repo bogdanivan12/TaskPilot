@@ -23,6 +23,7 @@ LOGGING_FORMAT = (
 
 DATETIME_FORMAT = "%d-%m-%Y %H:%M:%S"
 
+OPENAI_API_KEY = "sk-proj-kPi3mDi5BBp7FKfhK8hnT3BlbkFJvr37BZYWTBpZnS4FGuyE"
 
 def hash_password(password: str) -> str:
     """Hash a password using SHA-256 algorithm"""
@@ -52,6 +53,17 @@ def get_logger():
 def get_current_time() -> str:
     """Get the current time in a formatted string"""
     return str(datetime.datetime.now().strftime(DATETIME_FORMAT))
+
+
+AI_INSTRUCTIONS = """
+You are a project manager for a software development team responsible for
+giving support and guidance to team members that are usually engineers.
+Please write your responses in a concise manner, because they will be the
+responses given by TaskPilot platform's chatbot.
+You will be asked to respond to questions based on the projects and tickets
+users give you.
+Please respond to the user questions in the language they understand.
+"""
 
 
 class Entities:
@@ -159,6 +171,8 @@ class APIOperations:
     COMMENTS_SEARCH = "comments_search"
     COMMENTS_IS_USER_OWNER = "comments_is_user_owner"
 
+    AI = "ai"
+
 
 API_ROUTES = {
     APIOperations.USERS_GET: "/api/users/{user_id}",
@@ -215,7 +229,9 @@ API_ROUTES = {
     APIOperations.COMMENTS_ALL: "/api/comments",
     APIOperations.COMMENTS_SEARCH: "/api/comments/search",
     APIOperations.COMMENTS_IS_USER_OWNER: "/api/comments/{comment_id}/owners"
-                                          "/{user_id}"
+                                          "/{user_id}",
+
+    APIOperations.AI: "/api/ai"
 }
 
 

@@ -3,6 +3,7 @@ import datetime
 import uuid
 
 from taskpilot.api import db_operations as db
+from taskpilot.api import ai_interactions as ai
 from taskpilot.common import config_info, api_request_classes as api_req
 from taskpilot.common import models
 from taskpilot.api import api_response_classes as api_resp
@@ -1588,6 +1589,30 @@ def is_user_owner_of_comment(comment_id: str,
         message=f"User with id '{user.username}' is not the owner of comment"
                 f" with id '{comment_id}'",
         result=False
+    )
+    logger.info(response.message)
+    return response
+
+
+def ai_endpoint(ai_req: api_req.AIRequest) -> api_resp.AIResponse:
+    """
+    AI endpoint
+    """
+    response_message, chat_history = ai.get_openai_response(**ai_req.dict())
+
+    if not response_message or not chat_history:
+        response = api_resp.AIResponse(
+            message="Failed to retrieve response from OpenAI GPT-4o model",
+            code=424,
+            result=False
+        )
+        logger.error(response.message)
+        return response
+
+    response = api_resp.AIResponse(
+        message="Successfully retrieved response from OpenAI GPT-4o model",
+        response=response_message,
+        chat_history=chat_history
     )
     logger.info(response.message)
     return response
