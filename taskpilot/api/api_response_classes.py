@@ -1,5 +1,5 @@
 """API response classes"""
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 
 from taskpilot.common import models
@@ -50,3 +50,9 @@ class GetCommentResponse(Response):
 class GetAllCommentsResponse(Response):
     """Get all comments response model"""
     comments: Optional[List[models.Comment]] = None
+
+
+class AIResponse(Response):
+    """AI response model"""
+    response: Optional[str] = None
+    chat_history: Optional[List[Dict[str, str]]] = None

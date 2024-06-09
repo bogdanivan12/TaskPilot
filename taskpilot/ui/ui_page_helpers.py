@@ -10,6 +10,8 @@ from taskpilot.ui import projects_pages
 from taskpilot.ui import tickets_pages
 from taskpilot.ui import auth_pages
 
+from typing import List, Dict
+
 
 def apply_header(func):
     """Apply the header to the page"""

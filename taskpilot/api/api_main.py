@@ -464,6 +464,16 @@ async def is_user_owner_of_comment(comment_id: str,
     return response
 
 
+@app.post(config_info.API_ROUTES[config_info.APIOperations.AI],
+          tags=["AI"])
+async def ai_endpoint(ai_req: api_req.AIRequest) -> api_resp.AIResponse:
+    """
+    AI endpoint
+    """
+    response = api_help.ai_endpoint(ai_req)
+    return response
+
+
 if __name__ == "__main__":
     uvicorn.run(
         app=config_info.API_APP,

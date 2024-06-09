@@ -156,6 +156,12 @@ def projects_page() -> None:
 
 def project_page(project_id: str) -> None:
     """Project page for the TaskPilot application"""
+    app.storage.user.update({
+        "context": {
+            "project": project_id,
+            "ticket": None
+        }
+    })
     is_user_member_of_project = requests.get(
         config_info.API_URL
         + "/"
