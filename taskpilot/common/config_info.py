@@ -68,23 +68,28 @@ Do not respond to questions not related to the project management domain.
 """
 
 AI_CONTEXT_TEMPLATE = """
-The user has access the following resources of the app: {context}.
+The user has access to the following resources of the app: {context}.
 Help them by providing the necessary information related to the projects,
 tasks and comments they have access to.
 """
 
-# AI_TICKET_CONTEXT_TEMPLATE = """
-# The user is now looking at the ticket with ID {ticket_id}.
-# Without any specific information, they are asking questions related to this
-# ticket and its related objects (e.g. parent ticket, parent project,
-# child tickets, comments).
-# """
-#
-# AI_PROJECT_CONTEXT_TEMPLATE = """
-# The user is now looking at the project with ID {project_id}.
-# Without any specific information, they are asking questions related to this
-# projects and its related child tickets.
-# """
+AI_NO_CONTEXT_TEMPLATE = """
+The user is not looking at a specific project or ticket.
+Respond related to all the app resources they have access to.
+"""
+
+AI_TICKET_CONTEXT_TEMPLATE = """
+The user is now looking at the ticket with ID {ticket_id}.
+Without any specific information, they are asking questions related to this
+ticket and its related objects (e.g. parent ticket, parent project,
+child tickets, comments).
+"""
+
+AI_PROJECT_CONTEXT_TEMPLATE = """
+The user is now looking at the project with ID {project_id}.
+Without any specific information, they are asking questions related to this
+projects and its related child tickets.
+"""
 
 
 class Entities:
