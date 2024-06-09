@@ -67,7 +67,7 @@ def set_context(project_id: str = None, ticket_id: str = None) -> None:
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.HOME])
 def main_page() -> None:
     """Main page for the TaskPilot application"""
-    reset_chat_history()
+    set_context()
     return ui_help.main_page()
 
 
@@ -88,30 +88,28 @@ def register() -> None:
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.PROJECTS])
 def projects() -> None:
     """Projects page for the TaskPilot application"""
-    reset_chat_history()
+    set_context()
     return ui_help.projects()
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.TICKETS])
 def tickets() -> None:
     """Tickets page for the TaskPilot application"""
-    reset_chat_history()
+    set_context()
     return ui_help.tickets()
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.PROJECT])
 def project(project_id: str) -> None:
     """Project page for the TaskPilot application"""
-    reset_chat_history()
-    set_context(project_id)
+    set_context(project_id=project_id)
     return ui_help.project(project_id)
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.TICKET])
 def ticket(ticket_id: str) -> None:
     """Ticket page for the TaskPilot application"""
-    reset_chat_history()
-    set_context(ticket_id)
+    set_context(ticket_id=ticket_id)
     return ui_help.ticket(ticket_id)
 
 

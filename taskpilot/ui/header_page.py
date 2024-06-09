@@ -200,10 +200,10 @@ def header_page():
                     scroll_area.scroll_to(percent=1)
 
 
-                with ui.scroll_area().classes("w-full h-4/5") as scroll_area:
-                    ui.label("Chat with TaskPilot AI").classes("text-lg"
-                                                               " font-bold")
-                    ui.separator()
+                ui.label("Chat with TaskPilot AI").classes("text-lg"
+                                                           " font-bold")
+                ui.separator()
+                with ui.scroll_area().classes("w-full h-3/5") as scroll_area:
                     ui.chat_message(
                         text="Hi! I am TaskPilot, your AI Project Manager."
                              " How can I help you?",
@@ -212,6 +212,7 @@ def header_page():
 
                     get_chat_history()
 
+                ui.separator()
                 with ui.row().classes("w-96 fixed bottom-4 items-center"
                                       " self-center justify-center px-4"):
                     def send_message():
@@ -225,45 +226,48 @@ def header_page():
                             prompt=message,
                             chat_history=chat_history
                         )
-                        context = app.storage.user.get(
+                        general_context = get_overall_context(
+                            app.storage.user.get("username", ""))
+                        specific_context = app.storage.user.get(
                             "context",
                             {
                                 "project": None,
                                 "ticket": None
                             }
                         )
-                        config_info.get_logger().info(f"Context: {context}")
-                        context_project = context.get("project", None)
-                        context_ticket = context.get("ticket", None)
+                        config_info.get_logger().info(f"Context: {specific_context}")
+                        context_project = specific_context.get("project", None)
+                        context_ticket = specific_context.get("ticket", None)
                         if context_ticket:
-                            context_message = (
-                                config_info.AI_CONTEXT_TEMPLATE.format(
-                                    context=get_ticket_context(context_ticket)
+                            specific_context_message = (
+                                config_info.AI_TICKET_CONTEXT_TEMPLATE.format(
+                                    ticket_id=context_ticket
                                 )
                             )
                         elif context_project:
-                            context_message = (
-                                config_info.AI_CONTEXT_TEMPLATE.format(
-                                    context=get_project_context(
-                                        context_project
-                                    )
+                            specific_context_message = (
+                                config_info.AI_PROJECT_CONTEXT_TEMPLATE.format(
+                                    project_id=context_project
                                 )
                             )
                         else:
-                            context_message = (
-                                config_info.AI_CONTEXT_TEMPLATE.format(
-                                    context=get_overall_context(
-                                        app.storage.user.get("username", "")
-                                    )
-                                )
-                            )
+                            specific_context_message = (
+                                config_info.AI_NO_CONTEXT_TEMPLATE)
 
                         config_info.get_logger().info(f"Initial chat history: {chat_history}")
                         if not chat_history:
                             openai_request.system_prompt = (
                                     config_info.AI_INSTRUCTIONS + " "
-                                    + context_message
+                                    + config_info.AI_CONTEXT_TEMPLATE.format(
+                                context=general_context
                             )
+                            )
+
+                        if openai_request.system_prompt is None:
+                            openai_request.system_prompt = ""
+                        openai_request.system_prompt += (
+                            f" {specific_context_message}"
+                        )
 
                         chat_history.append({
                             "role": "user",
@@ -279,11 +283,9 @@ def header_page():
                                 f"/{config_info.API_ROUTES[APIOps.AI]}",
                             json=openai_request.dict()
                         ).json()
-                        app.storage.user.update(
-                            {
-                                "chat_history": openai_response["chat_history"]
-                            }
-                        )
+                        app.storage.user.update({
+                            "chat_history": openai_response["chat_history"]
+                        })
                         get_chat_history.refresh()
 
                     user_message = ui.input("Type your message here").on(
