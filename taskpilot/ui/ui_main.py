@@ -15,10 +15,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
     It redirects the user to the login page if they are not authenticated.
     """
     async def dispatch(self, request: Request, call_next):
-        app.storage.user.update({
-            "chat_history": []
-        })  # reset chat history on each page load
-
         path = request.url.path
 
         routes = Client.page_routes.values()
@@ -48,46 +44,74 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(AuthMiddleware)
 
+def reset_chat_history() -> None:
+    """Reset the chat history"""
+    app.storage.user.update({
+        "chat_history": [],
+        "context": {
+            "project": None,
+            "ticket": None
+        }
+    })
+
+
+def set_context(project_id: str = None, ticket_id: str = None) -> None:
+    """Set the context for the chat history"""
+    app.storage.user.update({
+        "context": {
+            "project": project_id,
+            "ticket": ticket_id
+        }
+    })
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.HOME])
 def main_page() -> None:
     """Main page for the TaskPilot application"""
+    reset_chat_history()
     return ui_help.main_page()
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.LOGIN])
 def login() -> None:
     """Login page for the TaskPilot application"""
+    reset_chat_history()
     return ui_help.login()
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.REGISTER])
 def register() -> None:
     """Register page for the TaskPilot application"""
+    reset_chat_history()
     return ui_help.register()
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.PROJECTS])
 def projects() -> None:
     """Projects page for the TaskPilot application"""
+    reset_chat_history()
     return ui_help.projects()
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.TICKETS])
 def tickets() -> None:
     """Tickets page for the TaskPilot application"""
+    reset_chat_history()
     return ui_help.tickets()
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.PROJECT])
 def project(project_id: str) -> None:
     """Project page for the TaskPilot application"""
+    reset_chat_history()
+    set_context(project_id)
     return ui_help.project(project_id)
 
 
 @ui.page(config_info.UI_ROUTES[config_info.UIPages.TICKET])
 def ticket(ticket_id: str) -> None:
     """Ticket page for the TaskPilot application"""
+    reset_chat_history()
+    set_context(ticket_id)
     return ui_help.ticket(ticket_id)
 
 

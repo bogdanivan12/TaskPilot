@@ -202,6 +202,13 @@ def ticket_page(ticket_id: str) -> None:
     ticket_response = requests.get(get_ticket_url).json()
     ticket = models.Ticket.parse_obj(ticket_response["ticket"])
 
+    app.storage.user.update({
+        "context": {
+            "project": ticket.parent_project,
+            "ticket": ticket_id
+        }
+    })
+
     is_user_member_of_project = requests.get(
         config_info.API_URL
         + "/"

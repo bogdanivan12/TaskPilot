@@ -8,8 +8,102 @@ from taskpilot.common.config_info import APIOperations as APIOps
 from taskpilot.common import api_request_classes as api_req
 from taskpilot.ui.auth_pages import is_user_authenticated
 
+from typing import Any, Dict, List
 
-def get_overall_context(username: str) -> str:
+
+def get_ticket_context(ticket_id: str) -> Dict[str, Any]:
+    """
+    Get the context for the ticket with the given ticket ID
+    """
+    ticket = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.TICKETS_GET].format(
+            ticket_id=ticket_id)
+    ).json()["ticket"]
+
+    ticket = models.Ticket.parse_obj(ticket)
+
+    ticket_dict = ticket.dict()
+    ticket_dict["parent_ticket"] = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.TICKETS_GET].format(
+            ticket_id=ticket.parent_ticket)
+    ).json()["ticket"]
+    ticket_dict["child_tickets"] = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.TICKETS_ALL_CHILDREN].format(
+            ticket_id=ticket_id)
+    ).json()["tickets"]
+    ticket_dict["parent_project"] = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.PROJECTS_GET].format(
+            project_id=ticket.parent_project)
+    ).json()["project"]
+    ticket_dict["comments"] = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.TICKETS_ALL_COMMENTS].format(
+            ticket_id=ticket.ticket_id)
+    ).json()["comments"]
+
+    return ticket_dict
+
+
+def get_project_context(project_id: str) -> Dict[str, Any]:
+    """
+    Get the context for the project with the given project ID
+    """
+    project = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.PROJECTS_GET].format(
+            project_id=project_id)
+    ).json()["project"]
+
+    project = models.Project.parse_obj(project)
+
+    project_dict = project.dict()
+    project_dict["tickets"] = []
+
+    tickets = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.PROJECTS_ALL_TICKETS].format(
+            project_id=project.project_id)
+    ).json()["tickets"]
+
+    tickets = [
+        models.Ticket.parse_obj(ticket) for ticket in tickets
+    ]
+
+    for ticket in tickets:
+        ticket_dict = ticket.dict()
+        ticket_dict["comments"] = []
+
+        comments = requests.get(
+            config_info.API_URL
+            + "/"
+            + config_info.API_ROUTES[APIOps.TICKETS_ALL_COMMENTS].format(
+                ticket_id=ticket.ticket_id)
+        ).json()["comments"]
+
+        comments = [
+            models.Comment.parse_obj(comment) for comment in comments
+        ]
+
+        for comment in comments:
+            ticket_dict["comments"].append(comment.dict())
+
+        project_dict["tickets"].append(ticket_dict)
+
+    return project_dict
+
+
+def get_overall_context(username: str) -> List[Dict[str, Any]]:
     """
     Get the overall context for the user about the projects and the tickets
     they have access to
@@ -28,47 +122,10 @@ def get_overall_context(username: str) -> str:
     ]
 
     for project in projects:
-        project_dict = project.dict()
-        project_dict["tickets"] = []
-
-        tickets = requests.get(
-            config_info.API_URL
-            + "/"
-            + config_info.API_ROUTES[APIOps.PROJECTS_ALL_TICKETS].format(
-                project_id=project.project_id)
-        ).json()["tickets"]
-
-        tickets = [
-            models.Ticket.parse_obj(ticket) for ticket in tickets
-        ]
-
-        for ticket in tickets:
-            ticket_dict = ticket.dict()
-            ticket_dict["comments"] = []
-
-            comments = requests.get(
-                config_info.API_URL
-                + "/"
-                + config_info.API_ROUTES[APIOps.TICKETS_ALL_COMMENTS].format(
-                    ticket_id=ticket.ticket_id)
-            ).json()["comments"]
-
-            comments = [
-                models.Comment.parse_obj(comment) for comment in comments
-            ]
-
-            for comment in comments:
-                ticket_dict["comments"].append(comment.dict())
-
-            project_dict["tickets"].append(ticket_dict)
-
+        project_dict = get_project_context(project.project_id)
         overall_context.append(project_dict)
 
-    return (
-        f"The user has access the following resources of the app:"
-        f" {overall_context}. Help him by providing the necessary information"
-        f" related to the projects, tasks and comments they have access to."
-    )
+    return overall_context
 
 
 def header_page():
@@ -140,9 +197,10 @@ def header_page():
                                 name=app.storage.user.get("username", ""),
                                 sent=True
                             ).classes("self-end")
+                    scroll_area.scroll_to(percent=1)
 
 
-                with ui.scroll_area().classes("w-full h-4/5"):
+                with ui.scroll_area().classes("w-full h-4/5") as scroll_area:
                     ui.label("Chat with TaskPilot AI").classes("text-lg"
                                                                " font-bold")
                     ui.separator()
@@ -167,12 +225,44 @@ def header_page():
                             prompt=message,
                             chat_history=chat_history
                         )
+                        context = app.storage.user.get(
+                            "context",
+                            {
+                                "project": None,
+                                "ticket": None
+                            }
+                        )
+                        config_info.get_logger().info(f"Context: {context}")
+                        context_project = context.get("project", None)
+                        context_ticket = context.get("ticket", None)
+                        if context_ticket:
+                            context_message = (
+                                config_info.AI_CONTEXT_TEMPLATE.format(
+                                    context=get_ticket_context(context_ticket)
+                                )
+                            )
+                        elif context_project:
+                            context_message = (
+                                config_info.AI_CONTEXT_TEMPLATE.format(
+                                    context=get_project_context(
+                                        context_project
+                                    )
+                                )
+                            )
+                        else:
+                            context_message = (
+                                config_info.AI_CONTEXT_TEMPLATE.format(
+                                    context=get_overall_context(
+                                        app.storage.user.get("username", "")
+                                    )
+                                )
+                            )
+
+                        config_info.get_logger().info(f"Initial chat history: {chat_history}")
                         if not chat_history:
                             openai_request.system_prompt = (
-                                config_info.AI_INSTRUCTIONS
-                                + get_overall_context(
-                                    app.storage.user.get("username", "")
-                                )
+                                    config_info.AI_INSTRUCTIONS + " "
+                                    + context_message
                             )
 
                         chat_history.append({

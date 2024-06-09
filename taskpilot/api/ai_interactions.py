@@ -5,9 +5,13 @@ from typing import List, Dict, Tuple, Optional
 from taskpilot.common import config_info
 
 
+logger = config_info.get_logger()
+
+
 def get_openai_client() -> openai.OpenAI:
     """Get the OpenAI client"""
     client = openai.OpenAI(api_key=config_info.OPENAI_API_KEY)
+    logger.info("Generated OpenAI client")
     return client
 
 
@@ -51,4 +55,7 @@ def get_openai_response(prompt: str,
             "content": response_message
         }
     )
+
+    logger.info(f"Generated OpenAI response for request '{prompt = }':"
+                f" {response_message = } {chat_history = }")
     return response_message, chat_history
