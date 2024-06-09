@@ -13,5 +13,4 @@ COPY taskpilot/ui ./ui
 
 EXPOSE 8081
 
-CMD ["python3", "-m", "pytest", "--disable-warnings"]
 CMD ["python3", "ui/ui_main.py"]

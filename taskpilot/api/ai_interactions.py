@@ -47,7 +47,7 @@ def get_openai_response(prompt: str,
 
     chat_history.append(
         {
-            "role": "system",
+            "role": "assistant",
             "content": response_message
         }
     )

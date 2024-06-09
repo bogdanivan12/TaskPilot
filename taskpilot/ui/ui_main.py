@@ -15,6 +15,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
     It redirects the user to the login page if they are not authenticated.
     """
     async def dispatch(self, request: Request, call_next):
+        app.storage.user.update({
+            "chat_history": []
+        })  # reset chat history on each page load
+
         path = request.url.path
 
         routes = Client.page_routes.values()

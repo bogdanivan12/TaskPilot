@@ -470,7 +470,7 @@ async def ai_endpoint(ai_req: api_req.AIRequest) -> api_resp.AIResponse:
     """
     AI endpoint
     """
-    response = api_help.ai_endpoint()
+    response = api_help.ai_endpoint(ai_req)
     return response
 
 

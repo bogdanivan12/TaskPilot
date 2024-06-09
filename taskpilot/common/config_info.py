@@ -62,7 +62,9 @@ Please write your responses in a concise manner, because they will be the
 responses given by TaskPilot platform's chatbot.
 You will be asked to respond to questions based on the projects and tickets
 users give you.
-Please respond to the user questions in the language they understand.
+Please respond to the user questions in the language they understand in
+maximum 50 words.
+Do not respond to questions not related to the project management domain.
 """
 
 

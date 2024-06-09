@@ -13,5 +13,4 @@ COPY taskpilot/api ./api
 
 EXPOSE 8080
 
-CMD ["python3", "-m", "pytest", "--disable-warnings"]
 CMD ["python3", "api/api_main.py"]

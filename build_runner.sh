@@ -24,17 +24,17 @@ start_service () {
   docker run --net taskpilot -p "$2":"$2" --name taskpilot-"$1" taskpilot-"$1" &
 }
 
-#start_service api 8080
+start_service api 8080
 start_service ui 8081
 
 
 # Testing
-#set -x
-#
-#SCRIPT_PATH=$(dirname "$0")
-#
-#python3 -m pylint taskpilot \
-#  --init-hook="import sys; sys.path.append('$SCRIPT_PATH')" \
-#  --rcfile=.pylintrc
-#
+set -x
+
+SCRIPT_PATH=$(dirname "$0")
+
+python3 -m pylint taskpilot \
+  --init-hook="import sys; sys.path.append('$SCRIPT_PATH')" \
+  --rcfile=.pylintrc
+
 #python3 -m pytest --disable-warnings

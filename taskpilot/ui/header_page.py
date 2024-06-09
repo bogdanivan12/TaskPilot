@@ -1,7 +1,74 @@
+import requests
+
 from nicegui import ui, app
 
 from taskpilot.common import config_info
+from taskpilot.common import models
+from taskpilot.common.config_info import APIOperations as APIOps
+from taskpilot.common import api_request_classes as api_req
 from taskpilot.ui.auth_pages import is_user_authenticated
+
+
+def get_overall_context(username: str) -> str:
+    """
+    Get the overall context for the user about the projects and the tickets
+    they have access to
+    """
+    overall_context = []
+
+    projects = requests.get(
+        config_info.API_URL
+        + "/"
+        + config_info.API_ROUTES[APIOps.USERS_ALL_PROJECTS].format(
+            user_id=username)
+    ).json()["projects"]
+
+    projects = [
+        models.Project.parse_obj(project) for project in projects
+    ]
+
+    for project in projects:
+        project_dict = project.dict()
+        project_dict["tickets"] = []
+
+        tickets = requests.get(
+            config_info.API_URL
+            + "/"
+            + config_info.API_ROUTES[APIOps.PROJECTS_ALL_TICKETS].format(
+                project_id=project.project_id)
+        ).json()["tickets"]
+
+        tickets = [
+            models.Ticket.parse_obj(ticket) for ticket in tickets
+        ]
+
+        for ticket in tickets:
+            ticket_dict = ticket.dict()
+            ticket_dict["comments"] = []
+
+            comments = requests.get(
+                config_info.API_URL
+                + "/"
+                + config_info.API_ROUTES[APIOps.TICKETS_ALL_COMMENTS].format(
+                    ticket_id=ticket.ticket_id)
+            ).json()["comments"]
+
+            comments = [
+                models.Comment.parse_obj(comment) for comment in comments
+            ]
+
+            for comment in comments:
+                ticket_dict["comments"].append(comment.dict())
+
+            project_dict["tickets"].append(ticket_dict)
+
+        overall_context.append(project_dict)
+
+    return (
+        f"The user has access the following resources of the app:"
+        f" {overall_context}. Help him by providing the necessary information"
+        f" related to the projects, tasks and comments they have access to."
+    )
 
 
 def header_page():
@@ -58,6 +125,23 @@ def header_page():
                                                          " right-4"):
             with ui.card().classes("w-96 h-96 bg-sky-100"
                                    " self-end") as chat_card:
+                @ui.refreshable
+                def get_chat_history():
+                    chat_history = app.storage.user.get("chat_history", [])
+                    for chat in chat_history:
+                        if chat["role"] == "assistant":
+                            ui.chat_message(
+                                text=chat["content"],
+                                name="TaskPilot"
+                            ).classes("self-start")
+                        elif chat["role"] == "user":
+                            ui.chat_message(
+                                text=chat["content"],
+                                name=app.storage.user.get("username", ""),
+                                sent=True
+                            ).classes("self-end")
+
+
                 with ui.scroll_area().classes("w-full h-4/5"):
                     ui.label("Chat with TaskPilot AI").classes("text-lg"
                                                                " font-bold")
@@ -68,47 +152,58 @@ def header_page():
                         name="TaskPilot"
                     )
 
-                    @ui.refreshable
-                    def get_chat_history():
-                        chat_history = app.storage.user.get("chat_history", [])
-                        for chat in chat_history:
-                            ui.chat_message(
-                                text=chat["content"],
-                                name=(
-                                    "TaskPilot" if chat["role"] == "system"
-                                    else app.storage.user.get("username", "")
-                                ),
-                                sent=chat["role"] == "user"
-                            ).classes(
-                                f"self-{'end' if chat['role'] == 'user' else 'start'}"
-                            )
-
                     get_chat_history()
 
                 with ui.row().classes("w-96 fixed bottom-4 items-center"
                                       " self-center justify-center px-4"):
-                    user_message = ui.input("Type your message here").on(
-                        "keydown.enter",
-                        lambda: add_message_chat_history(user_message.value,
-                                                         "user")
-                    ).classes("w-8/12")
+                    def send_message():
+                        message = user_message.value
+                        user_message.value = ""
+                        if not message.strip():
+                            return
 
-                    def add_message_chat_history(message: str, role: str):
+                        chat_history = app.storage.user.get("chat_history", [])
+                        openai_request = api_req.AIRequest(
+                            prompt=message,
+                            chat_history=chat_history
+                        )
+                        if not chat_history:
+                            openai_request.system_prompt = (
+                                config_info.AI_INSTRUCTIONS
+                                + get_overall_context(
+                                    app.storage.user.get("username", "")
+                                )
+                            )
+
+                        chat_history.append({
+                            "role": "user",
+                            "content": message
+                        })
+                        app.storage.user.update({
+                            "chat_history": chat_history
+                        })
+                        get_chat_history.refresh()
+
+                        openai_response = requests.post(
+                            url=f"{config_info.API_URL}"
+                                f"/{config_info.API_ROUTES[APIOps.AI]}",
+                            json=openai_request.dict()
+                        ).json()
                         app.storage.user.update(
                             {
-                                "chat_history": app.storage.user.get(
-                                    "chat_history", [])
-                                                + [{"content": message,
-                                                    "role": role}]
+                                "chat_history": openai_response["chat_history"]
                             }
                         )
                         get_chat_history.refresh()
-                        user_message.value = ""
+
+                    user_message = ui.input("Type your message here").on(
+                        "keydown.enter",
+                        lambda: send_message()
+                    ).classes("w-8/12")
 
                     ui.chip(
                         text="Send",
                         icon="send",
-                        on_click=lambda: add_message_chat_history(
-                            user_message.value, "user"),
+                        on_click=lambda: send_message(),
                         text_color="white"
                     )
