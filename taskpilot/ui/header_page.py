@@ -131,16 +131,18 @@ def get_overall_context(username: str) -> List[Dict[str, Any]]:
 def header_page():
     """Header page for the TaskPilot application"""
     is_user_auth = is_user_authenticated()
-    with ui.header().classes(
-            replace="row items-center fixed-top bg-sky-500") as header:
-        header.default_style("height: 35px; z-index: 1000;")
+    with ui.header().classes(replace="row items-center fixed-top bg-sky-500"
+                                     " justify-between h-12") as header:
         if is_user_auth:
             ui.button(
                 on_click=lambda: left_drawer.toggle(),
                 icon="menu"
             ).props("flat color=white")
+        ui.space()
         ui.label("TaskPilot").classes(
-            "text-3xl font-bold text-white absolute-center")
+            "text-3xl font-bold text-white")
+        ui.icon("task_alt", size="md").props("flat color=white")
+        ui.space()
         if is_user_auth:
             ui.chip(
                 text="Logout",
@@ -151,7 +153,7 @@ def header_page():
                     )
                 ),
                 icon="logout"
-            ).props("flat color=white").classes(replace="absolute-right")
+            ).props("flat color=white")
 
 
     with ui.left_drawer(value=is_user_auth).classes(
