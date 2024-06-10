@@ -6,7 +6,7 @@ from taskpilot.common import config_info
 from taskpilot.common import models
 from taskpilot.common.config_info import APIOperations as APIOps
 from taskpilot.common import api_request_classes as api_req
-from taskpilot.ui.auth_pages import is_user_authenticated
+from taskpilot.ui.user_pages import is_user_authenticated
 
 from typing import Any, Dict, List
 
@@ -158,20 +158,32 @@ def header_page():
             "bg-sky-100") as left_drawer:
         ui.button(
             text="Home",
+            icon="home",
             on_click=lambda: ui.navigate.to(
                 config_info.UI_ROUTES[config_info.UIPages.HOME]
             )
         ).classes("w-full")
         ui.button(
             text="Projects",
+            icon="folder",
             on_click=lambda: ui.navigate.to(
                 config_info.UI_ROUTES[config_info.UIPages.PROJECTS]
             )
         ).classes("w-full")
         ui.button(
             text="Tickets",
+            icon="list",
             on_click=lambda: ui.navigate.to(
                 config_info.UI_ROUTES[config_info.UIPages.TICKETS]
+            )
+        ).classes("w-full")
+        ui.button(
+            text="My Profile",
+            icon="person",
+            on_click=lambda: ui.navigate.to(
+                config_info.UI_ROUTES[config_info.UIPages.PROFILE].format(
+                    user_id=app.storage.user.get("username", "")
+                )
             )
         ).classes("w-full")
 

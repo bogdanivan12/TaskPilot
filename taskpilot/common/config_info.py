@@ -282,7 +282,7 @@ UI_ROUTES = {
     UIPages.PROJECT: "/projects/{project_id}",
     UIPages.TICKETS: "/tickets",
     UIPages.TICKET: "/tickets/{ticket_id}",
-    UIPages.PROFILE: "/profile",
+    UIPages.PROFILE: "/profile/{user_id}",
     UIPages.NOT_FOUND: "/404"
 }
 

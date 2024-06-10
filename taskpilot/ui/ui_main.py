@@ -113,6 +113,13 @@ def ticket(ticket_id: str) -> None:
     return ui_help.ticket(ticket_id)
 
 
+@ui.page(config_info.UI_ROUTES[config_info.UIPages.PROFILE])
+def profile(user_id: str) -> None:
+    """Profile page for the TaskPilot application"""
+    set_context()
+    return ui_help.profile(user_id)
+
+
 if __name__ in {"__main__", "__mp_main__"}:
     ui.run(
         title="TaskPilot",

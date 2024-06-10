@@ -8,7 +8,7 @@ from taskpilot.common import models
 from taskpilot.ui import header_page
 from taskpilot.ui import projects_pages
 from taskpilot.ui import tickets_pages
-from taskpilot.ui import auth_pages
+from taskpilot.ui import user_pages
 
 from typing import List, Dict
 
@@ -91,13 +91,13 @@ def main_page() -> None:
 @apply_header
 def login() -> None:
     """Login page for the TaskPilot application"""
-    return auth_pages.login_page()
+    return user_pages.login_page()
 
 
 @apply_header
 def register() -> None:
     """Register page for the TaskPilot application"""
-    return auth_pages.register_page()
+    return user_pages.register_page()
 
 
 @apply_header
@@ -122,3 +122,9 @@ def tickets() -> None:
 def ticket(ticket_id: str) -> None:
     """Ticket page for the TaskPilot application"""
     return tickets_pages.ticket_page(ticket_id)
+
+
+@apply_header
+def profile(user_id: str) -> None:
+    """Profile page for the TaskPilot application"""
+    return user_pages.profile_page(user_id)

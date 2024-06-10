@@ -91,7 +91,10 @@ def update_user(user_id: str,
     index = config_info.DB_INDEXES[config_info.Entities.USER]
     user_dict = user_req.dict()
     password = user_dict.pop("password")
-    hashed_password = config_info.hash_password(password)
+    if password:
+        hashed_password = config_info.hash_password(password)
+    else:
+        hashed_password = get_user(user_id).user.hashed_password
     user_dict["hashed_password"] = hashed_password
     user_dict["username"] = user_id
     user = models.User.parse_obj(user_dict)
