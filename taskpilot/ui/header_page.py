@@ -158,18 +158,21 @@ def header_page():
             "bg-sky-100") as left_drawer:
         ui.button(
             text="Home",
+            icon="home",
             on_click=lambda: ui.navigate.to(
                 config_info.UI_ROUTES[config_info.UIPages.HOME]
             )
         ).classes("w-full")
         ui.button(
             text="Projects",
+            icon="folder",
             on_click=lambda: ui.navigate.to(
                 config_info.UI_ROUTES[config_info.UIPages.PROJECTS]
             )
         ).classes("w-full")
         ui.button(
             text="Tickets",
+            icon="list",
             on_click=lambda: ui.navigate.to(
                 config_info.UI_ROUTES[config_info.UIPages.TICKETS]
             )
@@ -200,8 +203,20 @@ def header_page():
                     scroll_area.scroll_to(percent=1)
 
 
-                ui.label("Chat with TaskPilot AI").classes("text-lg"
-                                                           " font-bold")
+                with ui.row().classes("w-full justify-between items-center"):
+                    ui.label("Chat with TaskPilot AI"
+                             ).classes("text-lg font-bold")
+                    ui.chip(
+                        text="Clear Chat",
+                        icon="clear",
+                        on_click=lambda: (
+                            app.storage.user.update(
+                                {"chat_history": []}
+                            ),
+                            get_chat_history.refresh()
+                        ),
+                        text_color="white"
+                    )
                 ui.separator()
                 with ui.scroll_area().classes("w-full h-3/5") as scroll_area:
                     ui.chat_message(
