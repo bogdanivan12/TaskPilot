@@ -586,7 +586,7 @@ def delete_project(project_id: str) -> api_resp.Response:
     """
     index = config_info.DB_INDEXES[config_info.Entities.PROJECT]
 
-    child_tickets_req = api_req.SearchTicketsRequest(project_id=project_id)
+    child_tickets_req = api_req.SearchTicketsRequest(parent_project=project_id)
     child_tickets_resp = search_tickets(child_tickets_req)
     child_tickets = [ticket.ticket_id for ticket in child_tickets_resp.tickets]
 
