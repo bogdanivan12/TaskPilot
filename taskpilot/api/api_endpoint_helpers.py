@@ -1124,6 +1124,36 @@ def delete_ticket(ticket_id: str) -> api_resp.Response:
             logger.error(response.message)
             return response
 
+    child_tickets_req = api_req.SearchTicketsRequest(parent_ticket=ticket_id)
+    child_tickets_resp = search_tickets(child_tickets_req)
+    child_tickets = child_tickets_resp.tickets
+
+    for child_ticket in child_tickets:
+        update_ticket_req = api_req.UpdateTicketRequest(
+            title=child_ticket.title,
+            description=child_ticket.description,
+            type=child_ticket.type,
+            priority=child_ticket.priority,
+            status=child_ticket.status,
+            assignee=child_ticket.assignee,
+            modified_by=child_ticket.modified_by,
+            parent_project=child_ticket.parent_project,
+            parent_ticket=None
+        )
+        update_ticket_resp = update_ticket(child_ticket.ticket_id,
+                                           update_ticket_req)
+        if not update_ticket_resp.result:
+            response = api_resp.Response(
+                message=f"Failed to delete ticket with id '{ticket_id}'"
+                        f" due to failed child ticket update:"
+                        f" {update_ticket_resp.message}",
+                code=424,
+                result=False
+            )
+            logger.error(response.message)
+            return response
+
+
     db_delete_result = db.delete_item(index, ticket_id)
 
     if not db_delete_result:
