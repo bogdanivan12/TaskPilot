@@ -13,7 +13,12 @@ def tickets_page() -> None:
     """Tickets page for the TaskPilot application"""
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
-        title = ui.input("Title").classes("w-4/5")
+        title = ui.input(
+            "Title",
+            validation=lambda value: (
+                None if value else "Title cannot be empty"
+            )
+        ).classes("w-4/5")
         description = ui.textarea("Description").classes("w-4/5")
         ticket_type = ui.select(config_info.TICKET_TYPES,
                                 label="Type").classes("w-4/5")
@@ -234,7 +239,13 @@ def ticket_page(ticket_id: str) -> None:
     with ui.dialog() as modify_ticket_dialog, ui.card().classes(
             "w-full items-center"):
         ui.label("Modify Ticket").classes("text-2xl")
-        title = ui.input("Title", value=ticket.title).classes("w-4/5")
+        title = ui.input(
+            "Title",
+            value=ticket.title,
+            validation=lambda value: (
+                None if value else "Title cannot be empty"
+            )
+        ).classes("w-4/5")
         description = ui.textarea("Description",
                                     value=ticket.description).classes("w-4/5")
         parent_ticket = ui.select(
@@ -312,7 +323,12 @@ def ticket_page(ticket_id: str) -> None:
     with ui.dialog() as create_child_ticket_dialog, ui.card().classes(
             "w-full items-center"):
         ui.label("Create Child Ticket").classes("text-2xl")
-        child_title = ui.input("Title").classes("w-4/5")
+        child_title = ui.input(
+            "Title",
+            validation=lambda value: (
+                None if value else "Title cannot be empty"
+            )
+        ).classes("w-4/5")
         child_description = ui.textarea("Description").classes("w-4/5")
         child_ticket_type = ui.select(config_info.TICKET_TYPES,
                                         label="Type").classes("w-4/5")
