@@ -1,0 +1,16 @@
+FROM --platform=linux/amd64 python:3.8.11-bullseye
+
+WORKDIR /taskpilot
+
+ENV PYTHONPATH="${PYTHONPATH}:/."
+
+COPY taskpilot/ui/requirements.txt /taskpilot/ui/requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r ui/requirements.txt
+
+COPY taskpilot/common ./common
+COPY taskpilot/ui ./ui
+
+EXPOSE 8081
+
+CMD ["python3", "ui/ui_main.py"]
