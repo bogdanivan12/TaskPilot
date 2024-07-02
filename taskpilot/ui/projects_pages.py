@@ -445,7 +445,7 @@ def project_page(project_id: str) -> None:
                 color="warning"
             ).classes("text-white text-base")
             ui.chip(
-                "Delete Ticket",
+                "Delete Project",
                 on_click=delete_dialog.open,
                 icon="delete",
                 color="negative"
