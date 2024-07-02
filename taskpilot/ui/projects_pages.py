@@ -12,8 +12,16 @@ def projects_page() -> None:
     """Projects page for the TaskPilot application"""
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Project").classes("text-2xl")
-        project_id = ui.input("Project ID").classes("w-4/5")
-        title = ui.input("Title").classes("w-4/5")
+        project_id = ui.input(
+            "Project ID",
+            validation=lambda value: (
+                "Project ID cannot be empty" if not value else None
+            )
+        ).classes("w-4/5")
+        title = ui.input(
+            "Title",
+            validation=lambda value: "Title cannot be empty" if not value else None
+        ).classes("w-4/5")
         description = ui.textarea("Description").classes("w-4/5")
 
         all_users = requests.get(
@@ -177,7 +185,12 @@ def project_page(project_id: str) -> None:
 
     with ui.dialog() as dialog, ui.card().classes("w-full items-center"):
         ui.label("Create Ticket").classes("text-2xl")
-        ticket_title = ui.input("Title").classes("w-4/5")
+        ticket_title = ui.input(
+            "Title",
+            validation=lambda value: (
+                "Title cannot be empty" if not value else None
+            )
+        ).classes("w-4/5")
         ticket_description = ui.textarea("Description").classes("w-4/5")
         ticket_type = ui.select(config_info.TICKET_TYPES,
                                 label="Type").classes("w-4/5")
@@ -259,7 +272,13 @@ def project_page(project_id: str) -> None:
 
     with ui.dialog() as edit_dialog, ui.card().classes("w-full items-center"):
         ui.label("Edit Project").classes("text-2xl")
-        title = ui.input("Title", value=project.title).classes("w-4/5")
+        title = ui.input(
+            "Title",
+            value=project.title,
+            validation=lambda value: (
+                "Title cannot be empty" if not value else None
+            )
+        ).classes("w-4/5")
         description = ui.textarea("Description",
                                   value=project.description).classes("w-4/5")
 
@@ -426,7 +445,7 @@ def project_page(project_id: str) -> None:
                 color="warning"
             ).classes("text-white text-base")
             ui.chip(
-                "Delete Ticket",
+                "Delete Project",
                 on_click=delete_dialog.open,
                 icon="delete",
                 color="negative"

@@ -1,3 +1,4 @@
+import re
 import requests
 from nicegui import app, ui
 
@@ -104,18 +105,68 @@ def register_page() -> None:
         ui.navigate.to(config_info.UI_ROUTES[config_info.UIPages.HOME])
 
     with ui.card().classes("absolute-center"):
-        username = ui.input("Username").on("keydown.enter", create_user)
-        email = ui.input("Email").on("keydown.enter", create_user)
-        full_name = ui.input("Full name").on("keydown.enter", create_user)
+        username = ui.input(
+            "Username",
+            validation={
+                "Username must start with a letter": lambda value: (
+                    re.match("^[a-zA-Z]", value)
+                ),
+                "Username must be at least 4 characters long": lambda value: (
+                    len(value) >= 4
+                ),
+                "Username must contain only letters, digits and underscores"
+                " (_)": lambda value: (
+                    re.match("^[a-zA-Z0-9_]+$", value)
+                )
+            }
+        ).on("keydown.enter", create_user)
+        email = ui.input(
+            "Email",
+            validation=lambda value: (
+                "Invalid email address"
+                if not re.match(r"[^@]+@[^@]+\.[^@]+", value) else None
+            )
+        ).on("keydown.enter", create_user)
+        full_name = ui.input(
+            "Full name",
+            validation=lambda value: (
+                "Full name must contain only letters and spaces"
+                if not re.match("^[a-zA-Z ]+$", value) else None
+            )
+        ).on("keydown.enter", create_user)
         password = ui.input(
             label="Password",
             password=True,
-            password_toggle_button=True
+            password_toggle_button=True,
+            validation={
+                "Password must be at least 8 characters long": lambda value: (
+                    len(value) >= 8
+                ),
+                "Password must contain at least"
+                " one lowercase letter": lambda value: (
+                    re.search("[a-z]", value)
+                ),
+                "Password must contain at least"
+                " one uppercase letter": lambda value: (
+                    re.search("[A-Z]", value)
+                ),
+                "Password must contain at least one digit": lambda value: (
+                    re.search("[0-9]", value)
+                ),
+                "Password must contain at least"
+                " one special character": lambda value: (
+                    re.search("[^a-zA-Z0-9]", value)
+                )
+            }
         ).on("keydown.enter", create_user)
         confirm_password = ui.input(
             label="Confirm Password",
             password=True,
-            password_toggle_button=True
+            password_toggle_button=True,
+            validation=lambda value: (
+                "Passwords do not match"
+                if value != password.value else None
+            )
         ).on("keydown.enter", create_user)
         ui.button("Register", on_click=create_user).classes(
             "place-self-center")
