@@ -130,8 +130,8 @@ def register_page() -> None:
         full_name = ui.input(
             "Full name",
             validation=lambda value: (
-                "Full name must contain only letters and spaces"
-                if not re.match("^[a-zA-Z ]+$", value) else None
+                "Full name must contain only letters, spaces and hyphens (-)"
+                if not re.match("^[a-zA-Z \-]+$", value) else None
             )
         ).on("keydown.enter", create_user)
         password = ui.input(
