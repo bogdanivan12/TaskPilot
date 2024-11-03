@@ -23,7 +23,7 @@ LOGGING_FORMAT = (
 
 DATETIME_FORMAT = "%d-%m-%Y %H:%M:%S"
 
-OPENAI_API_KEY = "sk-proj-kPi3mDi5BBp7FKfhK8hnT3BlbkFJvr37BZYWTBpZnS4FGuyE"
+OPENAI_API_KEY = "sk-proj-kPi3mDi5BBp7FKfhK8hnT3BlbkFJvr37BZYWTBpZnS4FGuyE"  # replace with a valid API key
 
 def hash_password(password: str) -> str:
     """Hash a password using SHA-256 algorithm"""
